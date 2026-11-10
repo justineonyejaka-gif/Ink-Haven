@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#7A3A17">
+<meta name="description" content="Ink Haven: a home for every idea. A phone-first writing app.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ink Haven">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -1878,7 +1887,7 @@ function popHtmlExt(kind) {
   }
   if (kind === 'more') {
     const W = (ic, ti, ca, at, on) => `<button class="mw${on ? ' on' : ''}" ${at}><span class="mwi">${icon(ic)}</span><b>${ti}</b><i>${ca}</i></button>`;
-    return `<div class="mwg">${W('pen', 'Edit mode', 'Type and format', 'data-ed="mode" data-v="edit"', !edRead && !edFs)}${W('eye', 'Read mode', 'Only read, no keyboard', 'data-ed="mode" data-v="read"', edRead)}${W('expand', 'Full screen', 'Paper fills the screen', 'data-ed="mode" data-v="fs"', edFs)}${W('toolbar', state.set.tbOff ? 'Show toolbar' : 'Hide toolbar', 'Or double-tap the page', 'data-ed="tb-toggle"')}${W('toolbar', 'Reset toolbar', 'Put the tabs back in place', 'data-ed="dock-reset"')}${W('paper', 'Paper', 'Lines, colour, margins', 'data-action="paper"')}${W('find', 'Find and replace', 'Search this document', 'data-ed="pop" data-v="find"')}${W('headfoot', 'Header and footer', 'Top and bottom text', 'data-ed="pop" data-v="hf"')}${W('speaker', 'Read aloud', 'Listen to your writing', 'data-ed="pop" data-v="read"')}${W('upload', 'Import', 'Bring in a document', 'data-ed="import"')}${W('download', 'Export', 'Word, EPUB, HTML and more', 'data-ed="pop" data-v="export"')}</div>${closeBtn}`;
+    return `<div class="mwg">${W('pen', 'Edit mode', 'Type and format', 'data-ed="mode" data-v="edit"', !edRead && !edFs)}${W('eye', 'Read mode', 'Only read, no keyboard', 'data-ed="mode" data-v="read"', edRead)}${W('expand', 'Full screen', 'Paper fills the screen', 'data-ed="mode" data-v="fs"', edFs)}${W('toolbar', state.set.tbOff ? 'Show toolbar' : 'Hide toolbar', 'Or double-tap the page', 'data-ed="tb-toggle"')}${window.__installEvt ? W('download', 'Install app', 'Add Ink Haven to your phone', 'data-ed="install-app"') : ''}${W('toolbar', 'Reset toolbar', 'Put the tabs back in place', 'data-ed="dock-reset"')}${W('paper', 'Paper', 'Lines, colour, margins', 'data-action="paper"')}${W('find', 'Find and replace', 'Search this document', 'data-ed="pop" data-v="find"')}${W('headfoot', 'Header and footer', 'Top and bottom text', 'data-ed="pop" data-v="hf"')}${W('speaker', 'Read aloud', 'Listen to your writing', 'data-ed="pop" data-v="read"')}${W('upload', 'Import', 'Bring in a document', 'data-ed="import"')}${W('download', 'Export', 'Word, EPUB, HTML and more', 'data-ed="pop" data-v="export"')}</div>${closeBtn}`;
   }
   if (kind === 'symbols') return `<span class="lab">Symbols</span><div class="shape-grid">${SYMBOLS.map(c => `<button class="shape-btn" style="width:42px;height:42px;font-size:19px" data-ed="sym" data-v="${c}">${c}</button>`).join('')}</div>${closeBtn}`;
   if (kind === 'fn') return `<span class="lab">Footnote</span><textarea id="fntext" rows="2" placeholder="Type the note" style="flex:1;min-width:180px"></textarea><button class="btn primary" data-ed="fn-go" style="min-height:40px">Add footnote</button>${closeBtn}`;
@@ -2263,6 +2272,7 @@ document.addEventListener('click', e => {
   if (!edDoc) return;
   if (a === 'tb-toggle') { toggleDock(); if (popKind === 'more') closePop(); return; }
   if (a === 'mode') { if (v === 'read') { edRead = true; setFs(false, true); } else if (v === 'fs') { edRead = false; setFs(true); } else { edRead = false; setFs(false, true); } applyMode(); closePop(); return; }
+  if (a === 'install-app') { const ev = window.__installEvt; if (ev) { ev.prompt(); ev.userChoice.finally(() => { window.__installEvt = null; }); } closePop(); return; }
   if (a === 'dock-reset') { resetDock(); closePop(); toast('Toolbar back in place'); return; }
   if (a === 'fs-exit') { setFs(false); return; }
   if (a === 'sz-step') { applySize(curPt() + Number(v)); return; }
@@ -2506,6 +2516,8 @@ function toggleRead() {
   const q = chunkText(readText()); if (!q.length) { toast('Nothing to read yet'); return; }
   stopRead(); readQ = q; readState = 'play'; const tok = ++readTok; readNext(tok); refreshRead();
 }
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__installEvt = e; });
+window.addEventListener('appinstalled', () => { window.__installEvt = null; });
 window.addEventListener('hashchange', () => { stopRead(); stopDict(); edRead = false; if (edFs) setFs(false, true); });
 document.addEventListener('change', e => {
   if (e.target.id === 'readrate') { state.set.readRate = parseFloat(e.target.value) || 1; saveSettings(); }
@@ -3149,5 +3161,6 @@ initAccount();
 })();
 </script>
 
+<script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }</script>
 </body>
 </html>
