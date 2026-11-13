@@ -4782,34 +4782,40 @@ function mFire(d) {
 }
 const mOn = k => !!state.set[k];
 function mMenus() {
-  const E = (l, d, o) => Object.assign({ l, d }, o || {});
+  const I = n => icon(n, 18), W = n => wi(n), G = t => `<b class="mg">${t}</b>`;
+  const E = (l, ic, d, o) => Object.assign({ l, ic, d }, o || {});
   return {
-    File: [E('New document', { action: 'new-doc' }), E('My documents', null, { f: () => { try { flushSave(); } catch (x) {} location.hash = '#writing'; } }), 0,
-      E('Import a file…', { ed: 'import' }), E('Download or export…', { ed: 'pop', v: 'export' }), E('Manuscript export…', { w34: 'manu' }), 0, E('Snapshots (version history)', { w34: 'snap' })],
-    Edit: [E('Undo', { cmd: 'undo' }, { sc: 'Ctrl+Z' }), E('Redo', { cmd: 'redo' }, { sc: 'Ctrl+Y' }), 0,
-      E('Select all', null, { sc: 'Ctrl+A', f: () => { const e = $('#editor'); if (e) { e.focus(); document.execCommand('selectAll'); } } }), 0,
-      E('Find and replace…', { ed: 'pop', v: 'find' }), E('Add a comment', { ed: 'pop', v: 'cmnew' }), E('Clear formatting', { ed: 'clearfmt' }), 0,
-      E('Spelling suggestions', { ed: 'toggle', v: 'spell' }), E('Auto-correct', { ed: 'toggle', v: 'autocorrect' })],
-    View: [E('Edit mode', { ed: 'mode', v: 'edit' }), E('Read mode', { ed: 'mode', v: 'read' }), E('Full screen', { ed: 'mode', v: 'fs' }), 0,
-      E('Chapters panel', { w34: 'chap' }), E('Pages: wall or spread', { w34: 'pages' }), E('Focus mode', { w34: 'focus' }), E('Typewriter mode', { w34: 'tw' }, { chk: () => mOn('tw') }), E('Typewriter keys', { w34: 'tkb' }, { chk: () => mOn('tkb') }), E('Key click sound', { w34: 'click' }, { chk: () => wClickOn() }), 0,
-      E('Show or hide the toolbar', { ed: 'tb-toggle' })],
-    Insert: [E('Picture…', { ed: 'img-pick' }), E('Link…', { ed: 'pop', v: 'link' }, { sc: 'Ctrl+K' }), E('Table…', { ed: 'pop', v: 'table' }), E('Shape…', { ed: 'pop', v: 'shapes' }), 0,
-      E('Divider line', { ed: 'hr' }), E('Page break', { ed: 'pagebreak' }), E('Footnote…', { ed: 'pop', v: 'fn' }), E('Header and footer…', { ed: 'pop', v: 'hf' }), E('Symbols…', { ed: 'pop', v: 'symbols' }), 0, E('Comment', { ed: 'pop', v: 'cmnew' })],
-    Format: [E('Text', null, { sub: [E('Bold', { cmd: 'bold' }, { sc: 'Ctrl+B' }), E('Italic', { cmd: 'italic' }, { sc: 'Ctrl+I' }), E('Underline', { cmd: 'underline' }, { sc: 'Ctrl+U' }), E('Strikethrough', { cmd: 'strikeThrough' }), E('Subscript', { cmd: 'subscript' }), E('Superscript', { cmd: 'superscript' })] }),
-      E('Font…', { ed: 'pop', v: 'fontlist' }), E('Size…', { ed: 'pop', v: 'sizelist' }), E('Text colour…', { ed: 'pop', v: 'fore' }), E('Highlight…', { ed: 'pop', v: 'back' }), E('Paragraph style…', { ed: 'pop', v: 'stylelist' }), 0,
-      E('Align', null, { sub: [E('Left', { cmd: 'justifyLeft' }), E('Centre', { cmd: 'justifyCenter' }), E('Right', { cmd: 'justifyRight' }), E('Justify', { cmd: 'justifyFull' })] }),
-      E('Lists and quote', null, { sub: [E('Bullets', { cmd: 'insertUnorderedList' }), E('Numbers', { cmd: 'insertOrderedList' }), E('Quote', { cmd: 'quote' })] }), 0, E('Clear formatting', { ed: 'clearfmt' })],
-    Tools: [E('Word count…', { ed: 'pop', v: 'wcount' }), E('Word-count reminders…', { ed: 'pop', v: 'rem' }), E('Writing statistics', { w34: 'stats' }), E('Writing sprint', { w34: 'sprint' }), E('Daily prompt', { w34: 'prompt' }), E('Character tracker', { w34: 'track' }), 0,
-      E('Read aloud', { ed: 'pop', v: 'read' }), E('Voice typing', { ed: 'pop', v: 'dict' }), E('AI help', { ed: 'pop', v: 'ai' })],
-    'Storm Room': [E('Side panel: characters and outlines', null, { f: () => { const b = $('#tbstorm'); if (b) b.click(); } }), E('Open the Storm Room page', null, { f: () => { v32Return = location.hash || '#writing'; try { flushSave(); } catch (x) {} location.hash = '#storm'; } })],
-    Help: [E('Keyboard shortcuts', null, { f: () => wSheet('Keyboard shortcuts', '<p><b>Ctrl+B</b> bold &nbsp; <b>Ctrl+I</b> italic &nbsp; <b>Ctrl+U</b> underline</p><p><b>Ctrl+Z</b> undo &nbsp; <b>Ctrl+Y</b> redo &nbsp; <b>Ctrl+A</b> select all</p><p><b>Ctrl+K</b> insert a link</p><p>Every other tool is in the menus above.</p>') }), E('Show the welcome tour', null, { f: () => { location.hash = '#welcome'; } })]
+    File: [E('New document', I('plus'), { action: 'new-doc' }), E('My documents', I('folder'), null, { f: () => { try { flushSave(); } catch (x) {} location.hash = '#writing'; } }), 0,
+      E('Import a file…', I('upload'), { ed: 'import' }), E('Download or export…', I('download'), { ed: 'pop', v: 'export' }), E('Manuscript export…', W('manu'), { w34: 'manu' }), 0, E('Snapshots (version history)', W('snap'), { w34: 'snap' })],
+    Edit: [E('Undo', I('uturn'), { cmd: 'undo' }, { sc: 'Ctrl+Z' }), E('Redo', I('rturn'), { cmd: 'redo' }, { sc: 'Ctrl+Y' }), 0,
+      E('Select all', I('list'), null, { sc: 'Ctrl+A', f: () => { const e = $('#editor'); if (e) { e.focus(); document.execCommand('selectAll'); } } }), 0,
+      E('Find and replace…', I('find'), { ed: 'pop', v: 'find' }), E('Add a comment', I('comment'), { ed: 'pop', v: 'cmnew' }), E('Clear formatting', I('clearfmt'), { ed: 'clearfmt' })],
+    View: [E('Edit mode', I('pen'), { ed: 'mode', v: 'edit' }), E('Read mode', I('eye'), { ed: 'mode', v: 'read' }), E('Full screen', I('expand'), { ed: 'mode', v: 'fs' }), 0,
+      E('Show or hide the toolbar', I('toolbar'), { ed: 'tb-toggle' }), E('Zoom in', I('plus'), { zoom: '+' }), E('Zoom out', I('minus'), { zoom: '-' }), E('Reset zoom to 100%', G('100'), { zoom: '0' })],
+    Insert: [E('Picture…', I('image'), { ed: 'img-pick' }), E('Link…', I('link'), { ed: 'pop', v: 'link' }, { sc: 'Ctrl+K' }), E('Table…', I('table'), { ed: 'pop', v: 'table' }), E('Shape…', I('shapes'), { ed: 'pop', v: 'shapes' }), 0,
+      E('Divider line', I('hr'), { ed: 'hr' }), E('Page break', I('pagebreak'), { ed: 'pagebreak' }), E('Footnote…', I('footnote'), { ed: 'pop', v: 'fn' }), E('Header and footer…', I('headfoot'), { ed: 'pop', v: 'hf' }), E('Symbols…', I('symbols'), { ed: 'pop', v: 'symbols' }), 0,
+      E('Comment', I('comment'), { ed: 'pop', v: 'cmnew' }), E('Edit picture…', I('image'), { ed: 'pop', v: 'imgtools' })],
+    Format: [E('Text', I('bold'), null, { sub: [E('Bold', I('bold'), { cmd: 'bold' }, { sc: 'Ctrl+B' }), E('Italic', I('italic'), { cmd: 'italic' }, { sc: 'Ctrl+I' }), E('Underline', I('underline'), { cmd: 'underline' }, { sc: 'Ctrl+U' }), E('Strikethrough', I('strike'), { cmd: 'strikeThrough' }), E('Subscript', G('x<sub>2</sub>'), { cmd: 'subscript' }), E('Superscript', G('x<sup>2</sup>'), { cmd: 'superscript' })] }),
+      E('Font…', G('T'), { ed: 'pop', v: 'fontlist' }), E('Size…', G('Aa'), { ed: 'pop', v: 'sizelist' }), E('Text colour…', I('textcolor'), { ed: 'pop', v: 'fore' }), E('Highlight…', I('highlight'), { ed: 'pop', v: 'back' }), E('Paragraph style…', G('&para;'), { ed: 'pop', v: 'stylelist' }), 0,
+      E('Align', I('left'), null, { sub: [E('Left', I('left'), { cmd: 'justifyLeft' }), E('Centre', I('center'), { cmd: 'justifyCenter' }), E('Right', I('right'), { cmd: 'justifyRight' }), E('Justify', I('justify'), { cmd: 'justifyFull' })] }),
+      E('Lists and quote', I('ul'), null, { sub: [E('Bullets', I('ul'), { cmd: 'insertUnorderedList' }), E('Numbers', I('ol'), { cmd: 'insertOrderedList' }), E('Quote', G('&ldquo;'), { cmd: 'quote' })] }), 0, E('Clear formatting', I('clearfmt'), { ed: 'clearfmt' })],
+    Page: [E('Paper settings…', I('paper'), { action: 'paper' }), E('Pages instead of one long scroll', W('pages'), { ed: 'toggle', v: 'paged' }), E('Page wall or spread', W('pages'), { w34: 'pages' }), 0,
+      E('Page break', I('pagebreak'), { ed: 'pagebreak' }), E('Header and footer…', I('headfoot'), { ed: 'pop', v: 'hf' }), E('Footnote…', I('footnote'), { ed: 'pop', v: 'fn' })],
+    Writing: [E('Chapters panel', I('list'), { w34: 'chap' }), E('Focus mode', W('focus'), { w34: 'focus' }), E('Typewriter mode', W('type'), { w34: 'tw' }, { chk: () => mOn('tw') }), E('Typewriter keys', W('type'), { w34: 'tkb' }, { chk: () => mOn('tkb') }), E('Key click sound', W('click'), { w34: 'click' }, { chk: () => wClickOn() }), 0,
+      E('Character tracker', W('track'), { w34: 'track' }), E('Writing statistics', W('stats'), { w34: 'stats' }), E('Writing sprint', W('sprint'), { w34: 'sprint' }), E('Daily prompt', W('prompt'), { w34: 'prompt' }), E('Snapshots', W('snap'), { w34: 'snap' }), E('Manuscript export…', W('manu'), { w34: 'manu' }), 0,
+      E('Ambient sound (in Settings)', W('sound'), null, { f: () => { location.hash = '#settings'; } })],
+    Tools: [E('Word count…', G('123'), { ed: 'pop', v: 'wcount' }), E('Word-count reminders…', I('bell'), { ed: 'pop', v: 'rem' }), 0,
+      E('Read aloud', I('speaker'), { ed: 'pop', v: 'read' }), E('Voice typing', I('mic'), { ed: 'pop', v: 'dict' }), E('AI help', I('spark'), { ed: 'pop', v: 'ai' }), 0,
+      E('Spelling suggestions', I('spell'), { ed: 'toggle', v: 'spell' }), E('Auto-correct', I('spell'), { ed: 'toggle', v: 'autocorrect' }), E('Pen cursor', I('feather'), { ed: 'toggle', v: 'pen' })],
+    'Storm Room': [E('Side panel: characters and outlines', I('storm'), null, { f: () => { const b = $('#tbstorm'); if (b) b.click(); } }), E('Open the Storm Room page', I('book'), null, { f: () => { v32Return = location.hash || '#writing'; try { flushSave(); } catch (x) {} location.hash = '#storm'; } })],
+    Help: [E('Keyboard shortcuts', I('list'), null, { f: () => wSheet('Keyboard shortcuts', '<p><b>Ctrl+B</b> bold &nbsp; <b>Ctrl+I</b> italic &nbsp; <b>Ctrl+U</b> underline</p><p><b>Ctrl+Z</b> undo &nbsp; <b>Ctrl+Y</b> redo &nbsp; <b>Ctrl+A</b> select all</p><p><b>Ctrl+K</b> insert a link</p><p>Every other tool is in the menus above.</p>') }), E('Show the welcome tour', I('openbook'), null, { f: () => { location.hash = '#welcome'; } })]
   };
 }
 let MM = null, mOpen = '';
 function mRender(items, path) {
   return items.map((it, i) => { if (!it) return '<div class="msep"></div>'; const pp = path + i;
-    if (it.sub) return `<div class="mrow has" data-mi="${pp}"><span class="ml">${esc(it.l)}</span><span class="mar">&#9656;</span><div class="mmenu msub">${mRender(it.sub, pp + '.')}</div></div>`;
-    return `<button type="button" class="mrow" data-mi="${pp}"><span class="mck">${it.chk && it.chk() ? '&#10003;' : ''}</span><span class="ml">${esc(it.l)}</span>${it.sc ? `<span class="msc">${it.sc}</span>` : ''}</button>`; }).join('');
+    if (it.sub) return `<div class="mrow has" data-mi="${pp}"><span class="mic">${it.ic || ''}</span><span class="ml">${esc(it.l)}</span><span class="mar">&#9656;</span><div class="mmenu msub">${mRender(it.sub, pp + '.')}</div></div>`;
+    return `<button type="button" class="mrow" data-mi="${pp}"><span class="mic">${it.ic || ''}</span><span class="ml">${esc(it.l)}</span>${it.chk && it.chk() ? '<span class="mck">&#10003;</span>' : ''}${it.sc ? `<span class="msc">${it.sc}</span>` : ''}</button>`; }).join('');
 }
 function mItem(menu, path) { let arr = MM[menu], it = null; path.split('.').forEach(i => { it = arr[+i]; arr = it && it.sub; }); return it; }
 function mClose() { const m = $('#mmenu'); if (m) m.remove(); mOpen = ''; $$('.mbar [data-mn]').forEach(b => b.setAttribute('aria-expanded', 'false')); }
@@ -4825,7 +4831,7 @@ function mBuild() {
   if (!wide || !ed || bar) return;
   const card = ed.querySelector('.ed-card'); if (!card) return;
   const nb = document.createElement('nav'); nb.className = 'mbar'; nb.setAttribute('aria-label', 'Menus');
-  nb.innerHTML = ['File', 'Edit', 'View', 'Insert', 'Format', 'Tools', 'Storm Room', 'Help'].map(n => `<button type="button" data-mn="${n}" aria-haspopup="true" aria-expanded="false">${n}</button>`).join('');
+  nb.innerHTML = ['File', 'Edit', 'View', 'Insert', 'Format', 'Page', 'Writing', 'Tools', 'Storm Room', 'Help'].map(n => `<button type="button" data-mn="${n}" aria-haspopup="true" aria-expanded="false">${n}</button>`).join('');
   card.after(nb);
 }
 setInterval(mBuild, 700);
@@ -4845,7 +4851,7 @@ document.addEventListener('keydown', e => {
 const mStyle = document.createElement('style'); mStyle.textContent = `.mbar{display:flex;gap:2px;padding:2px 12px 4px;background:#FBF3E4;border-bottom:1px solid #EADBC4;flex:none}.mbar button{border:0;background:transparent;color:#4A2410;font:500 13.5px/1 system-ui,sans-serif;padding:8px 11px;border-radius:8px;cursor:pointer}.mbar button:hover,.mbar button[aria-expanded="true"]{background:#F0DFC0}
 .mmenu{background:#FFFAF0;border:1px solid #E4D0B4;border-radius:12px;box-shadow:0 12px 30px rgba(74,36,16,.22);padding:6px;min-width:250px;font:14px system-ui,sans-serif;color:#3A1D0C}.mmenu.top{position:fixed;z-index:200}
 .mrow{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;padding:8px 10px;border:0;background:transparent;border-radius:8px;text-align:left;font:inherit;color:inherit;cursor:pointer;position:relative}.mrow:hover{background:#F3E4C8}.mck{width:14px;color:#8A4722;font-weight:700}.ml{flex:1}.msc{opacity:.55;font-size:12.5px;margin-left:18px}.mar{opacity:.6}
-.msep{height:1px;background:#EADBC4;margin:5px 4px}.mrow.has .msub{display:none;position:absolute;left:calc(100% - 4px);top:-7px;z-index:201;min-width:200px}.mrow.has.open>.msub,.mrow.has:hover>.msub{display:block}.mmenu.flip .msub{left:auto;right:calc(100% - 4px)}`; document.head.appendChild(mStyle);
+.mic{width:20px;height:20px;display:grid;place-items:center;flex:none;color:#8A4722}.mic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.mic .mg{font:600 13px/1 Georgia,serif}.mck{width:auto;margin-left:6px}.mbar{overflow-x:auto;scrollbar-width:none}.mbar button{white-space:nowrap;padding:8px 9px}.msep{height:1px;background:#EADBC4;margin:5px 4px}.mrow.has .msub{display:none;position:absolute;left:calc(100% - 4px);top:-7px;z-index:201;min-width:200px}.mrow.has.open>.msub,.mrow.has:hover>.msub{display:block}.mmenu.flip .msub{left:auto;right:calc(100% - 4px)}`; document.head.appendChild(mStyle);
 
 
 /* ===== v26: context-aware slim toolbar (idle tools vs. selected-text tools) ===== */
@@ -4859,8 +4865,6 @@ function t35Build() {
   let last = fore;
   if (hl) { const c = hl.cloneNode(true); c.dataset.ctx = 'sel'; last.after(c); last = c; }
   if (cf) { const c = cf.cloneNode(true); c.dataset.ctx = 'sel'; last.after(c); last = c; }
-  const undo = mk('', { 'data-cmd': 'undo', 'data-ctx': 'idle' }, icon('uturn'), 'Undo'), redo = mk('', { 'data-cmd': 'redo', 'data-ctx': 'idle' }, icon('rturn'), 'Redo');
-  const grp = slim.querySelector('.tbgrp'); (grp ? grp.nextElementSibling || grp : font).after(undo); undo.after(redo);
   const chap = mk('', { 'data-w34': 'chap', 'data-ctx': 'idle', id: 'tbchap' }, wi('list'), 'Chapters'), tw = mk('', { 'data-t35': 'twall', 'data-ctx': 'idle', id: 'tbtw', 'aria-pressed': 'false' }, wi('type'), 'Typewriter mode');
   st.after(chap); chap.after(tw);
   st.dataset.ctx = 'idle'; sz.dataset.ctx = 'both';
@@ -4878,6 +4882,7 @@ document.addEventListener('click', e => {
   const on = !state.set.tw; state.set.tw = on; state.set.tkb = on; state.set.twclick = on; saveSettings(); wApply(); wTkSync(); toast(on ? 'Typewriter mode on' : 'Typewriter mode off');
 });
 const t35Style = document.createElement('style'); t35Style.textContent = `.tbslim:not([data-sel]) [data-ctx="sel"]{display:none!important}.tbslim[data-sel] [data-ctx="idle"]{display:none!important}.tbslim .tb[aria-pressed="true"]#tbtw{background:#F0DFC0!important;box-shadow:inset 0 0 0 1px #C9A06A}`; document.head.appendChild(t35Style);
+const dkStyle = document.createElement('style'); dkStyle.textContent = `@media (min-width:900px){.editor #tbplus,.editor .tbslim .rchev,.editor .tbmore,.editor .tbreveal{display:none!important}.tbslim[data-t35] [data-ctx]{display:inline-flex!important}.tbslim .tbplus+.tbsep{display:none}}`; document.head.appendChild(dkStyle);
 
 document.addEventListener('selectionchange', updateToolbar);
 
