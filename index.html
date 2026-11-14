@@ -5098,9 +5098,9 @@ document.addEventListener('click', e => {
   else if (a === 'ftag') { n29Tag = n29Tag === v ? '' : v; render(); }
   else if (a === 'fold-open') { state.srFolder = v; srRefresh(); }
   else if (a === 'fold-back') { state.srFolder = ''; srRefresh(); }
-  else if (a === 'fold-new') srAsk('New story folder', 'Name it after your story. All its characters will live inside.', '', 'Create', name => { name = (name || '').trim() || 'Untitled story'; const f = { id: srId(), name, docId: '', created: Date.now() }; (STORM.folders = STORM.folders || []).push(f); srSave(); state.srFolder = f.id; srRefresh(); });
+  else if (a === 'fold-new') srAsk('New story', 'Name your story. Its characters, plot, scenes and arcs all belong to it.', '', 'Create', name => { name = (name || '').trim() || 'Untitled story'; const f = { id: srId(), name, docId: '', created: Date.now() }; (STORM.folders = STORM.folders || []).push(f); srSave(); state.srFolder = f.id; srRefresh(); });
   else if (a === 'fold-link') { const f = n29Folder(state.srFolder); if (f) { srLinkDialog(f); const dl = $('#srdlg'); if (dl) dl.addEventListener('click', ev => { if (ev.target.closest('[data-d]')) setTimeout(() => { STORM.characters.forEach(c => { if (c.folderId === f.id) c.docId = f.docId || ''; }); srSave(); }, 0); }, true); } }
-  else if (a === 'fold-del') { const f = n29Folder(state.srFolder); if (f) srConfirm('Delete this folder?', 'The characters inside are kept and move to "Unfiled".', 'Delete', () => { STORM.characters.forEach(c => { if (c.folderId === f.id) c.folderId = ''; }); STORM.folders = STORM.folders.filter(x => x !== f); srSave(); state.srFolder = ''; srRefresh(); }, true); }
+  else if (a === 'fold-del') { const f = n29Folder(state.srFolder); if (f) srConfirm('Delete this story?', 'Its characters are kept and move to "No story yet".', 'Delete', () => { STORM.characters.forEach(c => { if (c.folderId === f.id) c.folderId = ''; }); STORM.folders = STORM.folders.filter(x => x !== f); srSave(); state.srFolder = ''; srRefresh(); }, true); }
   else if (a === 'fold-newchar') { const c = srNewChar(); const f = n29Folder(state.srFolder); if (f) { c.folderId = f.id; c.docId = f.docId || ''; srSave(); } location.hash = '#storm-c-' + c.id; }
   else if (a === 'emoji') { const c = srChar((state.route || {}).cid); if (c) { c.emoji = v === c.emoji ? '' : v; c.updated = Date.now(); srSave(); srRefresh(); } }
   else if (a === 'subadd') { const c = srChar((state.route || {}).cid), i = $('#n29sub'); if (c && i && i.value.trim()) { (c.subs = c.subs || []).push(i.value.trim().slice(0, 40)); c.updated = Date.now(); srSave(); srRefresh(); setTimeout(() => { const x = $('#n29sub'); if (x) x.focus(); }, 30); } }
@@ -5151,11 +5151,11 @@ function n29Card(c) {
     (n29Meta(c) ? '<span class="sr-sub">' + esc(n29Meta(c)) + '</span>' : '') + '<span class="sr-sub">' + esc(c.role || 'No role yet') + '</span>' + (subs ? '<span class="n29subs">' + subs + '</span>' : '') + '<span class="sr-sub n29fill">' + filled + '/' + c.widgets.length + ' widgets filled</span></a>';
 }
 function n29FolderPage(fid) {
-  const f = fid === '_none' ? { id: '_none', name: 'Unfiled characters', docId: '' } : n29Folder(fid); if (!f) { state.srFolder = ''; return srHome(); }
+  const f = fid === '_none' ? { id: '_none', name: 'Characters with no story yet', docId: '' } : n29Folder(fid); if (!f) { state.srFolder = ''; return srHome(); }
   const list = STORM.characters.filter(c => (fid === '_none' ? !c.folderId || !n29Folder(c.folderId) : c.folderId === fid)).sort((a, b) => b.updated - a.updated), dn = srDocName(f.docId);
-  return '<div class="page srm"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to folders">' + V32_BACK + '</button>' +
-    (fid === '_none' ? '<h1 class="n29ft">Unfiled characters</h1>' : '<input class="sr-name" id="n29fname" value="' + esc(f.name) + '" aria-label="Folder name"><button class="sr-dots" data-n29="fold-del" aria-label="Delete folder">' + icon('trash') + '</button>') + '</div>' +
-    (fid === '_none' ? '' : '<button class="sr-linkbtn" data-n29="fold-link">' + (dn ? 'Linked to ' + esc(dn) : 'Link this folder to a document') + '</button>') +
+  return '<div class="page srm"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to stories">' + V32_BACK + '</button>' +
+    (fid === '_none' ? '<h1 class="n29ft">Characters with no story yet</h1>' : '<input class="sr-name" id="n29fname" value="' + esc(f.name) + '" aria-label="Story name"><button class="sr-dots" data-n29="fold-del" aria-label="Delete folder">' + icon('trash') + '</button>') + '</div>' +
+    (fid === '_none' ? '' : '<button class="sr-linkbtn" data-n29="fold-link">' + (dn ? 'Linked to ' + esc(dn) : 'Link this story to a document') + '</button>') +
     '<button class="btn primary" data-n29="fold-newchar">' + srPlus + ' New character</button>' +
     (list.length ? '<p class="lead" style="margin:4px 0 0">' + list.length + ' character' + (list.length > 1 ? 's' : '') + '. Swipe sideways.</p><div class="n29fc">' + list.map(n29Card).join('') + '</div>' : '<p class="lead">No characters in this folder yet.</p>') + '</div>';
 }
@@ -5173,8 +5173,8 @@ srHome = function () {
     '<section class="panel"><div class="panel-head"><h2>Recent outlines</h2></div>' + (shown.length ? shown.map(o => card(o)).join('') : '<p class="lead" style="margin:0">Nothing yet. Pick a structure above to begin.</p>') +
     (act.length > 5 ? '<button class="sr-linkbtn" data-n29="outall">' + (state.srAll ? 'Show fewer' : 'Show all (' + act.length + ')') + '</button>' : '') +
     (arch.length ? '<button class="sr-linkbtn" data-sr="arch">' + (state.srArch ? 'Hide' : 'Show') + ' archived (' + arch.length + ')</button>' + (state.srArch ? arch.map(o => card(o, true)).join('') : '') : '') + '</section>' +
-    '<section class="panel"><div class="panel-head"><h2>Characters</h2></div><p class="lead" style="margin:0">One folder per story keeps each cast together.</p><button class="btn primary" data-n29="fold-new">' + srPlus + ' New story folder</button>' +
-    ((folders.length || unf.length) ? '<div class="n29folds">' + folders.map(fcard).join('') + (unf.length ? '<button class="n29fold" data-n29="fold-open" data-v="_none"><span class="n29fi">' + icon('folder', 22) + '</span><span class="sr-cmeta"><b>Unfiled</b><span class="sr-sub">' + unf.length + ' character' + (unf.length === 1 ? '' : 's') + '</span></span>' + srChev + '</button>' : '') + '</div>' : '<p class="lead" style="margin:0">No folders yet. Make one for your story, then add its characters.</p>') + '</section></div>';
+    '<section class="panel"><div class="panel-head"><h2>Characters</h2></div><p class="lead" style="margin:0">Each story keeps its own cast together.</p><button class="btn primary" data-n29="fold-new">' + srPlus + ' New story</button>' +
+    ((folders.length || unf.length) ? '<div class="n29folds">' + folders.map(fcard).join('') + (unf.length ? '<button class="n29fold" data-n29="fold-open" data-v="_none"><span class="n29fi">' + icon('folder', 22) + '</span><span class="sr-cmeta"><b>No story yet</b><span class="sr-sub">' + unf.length + ' character' + (unf.length === 1 ? '' : 's') + '</span></span>' + srChev + '</button>' : '') + '</div>' : '<p class="lead" style="margin:0">No stories yet. Create one, then add its characters.</p>') + '</section></div>';
 };
 srCharPage = function (c) {
   const dn = srDocName(c.docId), fs = STORM.folders || [];
@@ -5187,7 +5187,7 @@ srCharPage = function (c) {
     '<div class="n29blk"><b>Role</b><input class="sr-role" id="sr-crole" list="sr-roles" value="' + esc(c.role) + '" placeholder="Role, e.g. Main character" aria-label="Role"><datalist id="sr-roles"><option value="Main character"><option value="Antagonist"><option value="Supporting character"><option value="Mentor"><option value="Love interest"><option value="Sidekick"></datalist>' +
     '<div class="n29subl">' + (c.subs || []).map((s, i) => '<span class="n29sub"><i></i>' + esc(s) + '<button data-n29="subdel" data-v="' + i + '" aria-label="Remove sub-role ' + esc(s) + '">&times;</button></span>').join('') + '</div>' +
     '<div class="n29subadd"><input id="n29sub" maxlength="40" placeholder="Add a sub-role (e.g. Healer, Secret heir)"><button class="btn" data-n29="subadd">' + srPlus + ' Add</button></div></div>' +
-    '<div class="n29blk"><b>Story folder</b><select id="n29-folder"><option value="">Unfiled</option>' + fs.map(f => '<option value="' + f.id + '"' + (c.folderId === f.id ? ' selected' : '') + '>' + esc(f.name) + '</option>').join('') + '</select>' +
+    '<div class="n29blk"><b>Story</b><select id="n29-folder"><option value="">No story yet</option>' + fs.map(f => '<option value="' + f.id + '"' + (c.folderId === f.id ? ' selected' : '') + '>' + esc(f.name) + '</option>').join('') + '</select>' +
     (dn ? '<button class="sr-linkbtn" data-sr="cm-link">Linked to ' + esc(dn) + '</button>' : '<button class="sr-linkbtn" data-sr="cm-link">Link to a document</button>') + '</div>' +
     '<div class="sr-wlist">' + c.widgets.map(w => '<button class="sr-w" data-sr="wopen" data-id="' + w.id + '"><span class="sr-w-b"><b>' + esc(w.title) + '</b><span class="sr-w-p' + (w.body ? '' : ' nil') + '">' + esc(w.body ? w.body.slice(0, 110) : 'Tap to write') + '</span></span>' + (w.img ? '<span class="sr-w-img" style="background-image:url(' + w.img + ')"></span>' : '') + srChev + '</button>').join('') + '</div>' +
     '<button class="btn sr-addroot" data-sr="wadd">' + srPlus + ' Add widget</button></div>';
@@ -5292,7 +5292,7 @@ function n30Seq(fid) {
 function n30Page(fid) {
   const f = fid === '_none' ? { name: 'Unfiled' } : n29Folder(fid); if (!f) { state.srFolder = ''; return srHome(); }
   const v = n30State.v, nav = [['overview', 'Overview'], ['list', 'Scenes'], ['board', 'Board'], ['seq', 'Sequence']];
-  return '<div class="page srm n30page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to folders">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, 'scenes') +
+  return '<div class="page srm n30page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to stories">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, 'scenes') +
     '<div class="n30nav">' + nav.map(n => '<button data-n30="view" data-v="' + n[0] + '" class="' + (v === n[0] ? 'on' : '') + '">' + n[1] + '</button>').join('') + '<button class="btn primary n30newb" data-n30="new">' + srPlus + ' New scene</button></div>' +
     (v === 'overview' ? n30Overview(fid) : v === 'list' ? n30ListView(fid) : v === 'board' ? n30Board(fid) : n30Seq(fid)) + '</div>';
 }
@@ -5316,7 +5316,7 @@ function n30Edit(id) {
     '<div class="n30two"><label>Status<select id="n30-status"><option value="">Not set</option>' + N30_STATUS.map(x => '<option' + (s.status === x ? ' selected' : '') + '>' + x + '</option>').join('') + '</select></label><label>Chapter<input id="n30-chapter" list="n30-chl" value="' + esc(s.chapter) + '" placeholder="None"><datalist id="n30-chl">' + chs.map(c => '<option value="' + esc(c) + '">').join('') + '</datalist></label></div>' +
     '<details open><summary>Details (all optional)</summary>' +
     '<label>POV character<select id="n30-pov"><option value="">None</option>' + cs.map(c => '<option value="' + c.id + '"' + (s.pov === c.id ? ' selected' : '') + '>' + esc(n29Full(c)) + '</option>').join('') + '</select></label>' +
-    (cs.length ? '<div class="n30blk"><b>Characters present</b><div class="n30chips">' + cs.map(c => '<label class="n30ck"><input type="checkbox" data-n30chk="' + c.id + '"' + ((s.chars || []).includes(c.id) ? ' checked' : '') + '> ' + esc(n29Full(c)) + '</label>').join('') + '</div></div>' : '<p class="lead n30hint">Add characters to this story folder to pick POV and who is present.</p>') +
+    (cs.length ? '<div class="n30blk"><b>Characters present</b><div class="n30chips">' + cs.map(c => '<label class="n30ck"><input type="checkbox" data-n30chk="' + c.id + '"' + ((s.chars || []).includes(c.id) ? ' checked' : '') + '> ' + esc(n29Full(c)) + '</label>').join('') + '</div></div>' : '<p class="lead n30hint">Add characters to this story to pick POV and who is present.</p>') +
     F('Location or setting', 'n30-loc', s.loc, '') + F('Scene purpose', 'n30-purpose', s.purpose, 'Why does this scene exist?', true) + F('Conflict or tension', 'n30-conflict', s.conflict, '', true) + F('Expected outcome', 'n30-outcome', s.outcome, '', true) +
     F('Related plotlines', 'n30-plots', (s.plots || []).join(', '), 'Separate with commas') + F('Description', 'n30-desc', s.desc, '', true) + F('Notes', 'n30-notes', s.notes, '', true) + F('Story time (optional)', 'n30-chrono', s.chrono, 'e.g. Day 3, evening') + '</details>' +
     '<div class="n30blk"><b>Your own properties</b><div id="n30cust">' + (s.custom || []).map((p, i) => '<div class="n30cp"><input data-n30cp="k" data-i="' + i + '" value="' + esc(p.k) + '" placeholder="Name"><input data-n30cp="v" data-i="' + i + '" value="' + esc(p.v) + '" placeholder="Value"><button data-n30="cpdel" data-v="' + i + '" aria-label="Remove property">&times;</button></div>').join('') + '</div><button class="btn" data-n30="cpadd">' + srPlus + ' Add property</button></div>' +
@@ -5515,7 +5515,7 @@ function n31Page(fid) {
   else if (v === 'conflicts') body = n31List('conflicts', fid, 'conflicts', '<button class="btn primary" data-n31="new" data-k="conflicts" style="margin-bottom:8px">' + srPlus + ' New conflict</button>');
   else if (v === 'events') body = n31List('events', fid, 'events', '<button class="btn primary" data-n31="new" data-k="events" style="margin-bottom:8px">' + srPlus + ' New event</button>');
   else if (v === 'board') body = n31Board(fid); else body = n31Timeline(fid);
-  return '<div class="page srm n30page n31page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to folders">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, 'plot') + '<div class="n30nav">' + nav.map(n => '<button data-n31="view" data-v="' + n[0] + '" class="' + (v === n[0] ? 'on' : '') + '">' + n[1] + '</button>').join('') + '</div>' + body + '</div>';
+  return '<div class="page srm n30page n31page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to stories">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, 'plot') + '<div class="n30nav">' + nav.map(n => '<button data-n31="view" data-v="' + n[0] + '" class="' + (v === n[0] ? 'on' : '') + '">' + n[1] + '</button>').join('') + '</div>' + body + '</div>';
 }
 n30Tabs = function (fid, cur) { return '<div class="n30tabs"><button data-n30="tab" data-v="chars" class="' + (cur === 'chars' ? 'on' : '') + '">Characters</button><button data-n30="tab" data-v="scenes" class="' + (cur === 'scenes' ? 'on' : '') + '">Scenes (' + n30List(fid).length + ')</button><button data-n30="tab" data-v="plot" class="' + (cur === 'plot' ? 'on' : '') + '">Plot</button></div>'; };
 { const _f = n29FolderPage; n29FolderPage = function (fid) { if (state.srTab === 'plot') { const f = fid === '_none' ? true : n29Folder(fid); if (f) return n31Page(fid); } return _f(fid); }; }
@@ -5531,7 +5531,7 @@ function n31Edit(k, id) {
     if (f.t === 'select') return '<label>' + f.l + '<select id="' + id2 + '"><option value="">Not set</option>' + f.o.map(o => '<option' + (v === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select></label>';
     if (f.t === 'chars') return cs.length ? '<div class="n30blk"><b>' + f.l + '</b><div class="n30chips">' + cs.map(c => '<label class="n30ck"><input type="checkbox" data-n31chk="' + f.k + '|' + c.id + '"' + ((v || []).includes(c.id) ? ' checked' : '') + '> ' + esc(n29Full(c)) + '</label>').join('') + '</div></div>' : '';
     if (f.t === 'ref') { const src = f.r === 'scenes' ? n30List(fid) : n31L(f.r, fid).filter(x => x.id !== id); if (!src.length) return ''; return '<div class="n30blk"><b>' + f.l + '</b><div class="n30chips">' + src.map(x => '<label class="n30ck"><input type="checkbox" data-n31chk="' + f.k + '|' + x.id + '"' + ((v || []).includes(x.id) ? ' checked' : '') + '> ' + esc(n31Name(f.r, x)) + '</label>').join('') + '</div></div>'; }
-    if (f.t === 'char') return '<label>' + f.l + '<select id="' + id2 + '"><option value="">Choose a character</option>' + cs.map(c => '<option value="' + c.id + '"' + (v === c.id ? ' selected' : '') + '>' + esc(n29Full(c)) + '</option>').join('') + '</select></label>' + (cs.length ? '' : '<p class="lead n30hint">Add characters to this story folder first.</p>');
+    if (f.t === 'char') return '<label>' + f.l + '<select id="' + id2 + '"><option value="">Choose a character</option>' + cs.map(c => '<option value="' + c.id + '"' + (v === c.id ? ' selected' : '') + '>' + esc(n29Full(c)) + '</option>').join('') + '</select></label>' + (cs.length ? '' : '<p class="lead n30hint">Add characters to this story first.</p>');
     if (f.t === 'stages') { const sc = n30List(fid); return '<div class="n30blk"><b>Stages of change</b>' + (v || []).map((s, i) => '<div class="n32stg"><div class="n30cp"><input data-n32f="t" data-i="' + i + '" value="' + esc(s.t) + '" aria-label="Stage title"><button data-n32="up" data-v="' + i + '" aria-label="Move up">&#9650;</button><button data-n32="dn" data-v="' + i + '" aria-label="Move down">&#9660;</button><button data-n32="del" data-v="' + i + '" aria-label="Remove stage">&times;</button></div><textarea data-n32f="b" data-i="' + i + '" rows="2" placeholder="What changes here?">' + esc(s.b || '') + '</textarea>' + (sc.length ? '<select data-n32f="scene" data-i="' + i + '" aria-label="Scene for this stage"><option value="">No scene linked</option>' + sc.map(x => '<option value="' + x.id + '"' + (s.scene === x.id ? ' selected' : '') + '>' + esc(n30Name(x)) + '</option>').join('') + '</select>' : '') + '</div>').join('') + '<div class="n30chips"><button class="btn" data-n32="add">' + srPlus + ' Add stage</button><button class="btn" data-n32="suggest">Add suggested stages</button></div></div>'; }
     if (f.t === 'sections') return '<div class="n30blk"><b>Development structure (optional)</b>' + (v || []).map((s, i) => '<div class="n31sec"><div class="n30cp"><input data-n31sec="t" data-i="' + i + '" value="' + esc(s.t) + '" aria-label="Section title"><button data-n31="secup" data-v="' + i + '" aria-label="Move up">&#9650;</button><button data-n31="secdn" data-v="' + i + '" aria-label="Move down">&#9660;</button><button data-n31="secdel" data-v="' + i + '" aria-label="Remove section">&times;</button></div><textarea data-n31sec="b" data-i="' + i + '" rows="2" placeholder="Leave empty if you like">' + esc(s.b || '') + '</textarea></div>').join('') + '<button class="btn" data-n31="secadd">' + srPlus + ' Add section</button></div>';
     return '';
@@ -5611,7 +5611,7 @@ function n32Page(fid) {
     const groups = cs.map(c => ({ c, l: fl.filter(a => a.char === c.id) })).filter(g => g.l.length).concat(fl.some(a => !n32Char(a.char)) ? [{ c: null, l: fl.filter(a => !n32Char(a.char)) }] : []);
     body = '<div class="n30fl"><input id="n31q" type="search" value="' + esc(n31S.q || '') + '" placeholder="Search arcs"></div>' + (groups.length ? groups.map(g => '<p class="n30gh">' + esc(g.c ? n29Full(g.c) : 'No character chosen') + '</p><div class="n30lst">' + g.l.map(a => n31CardHtml('arcs', a)).join('') + '</div>').join('') : '<div class="n30empty"><b>No arcs yet</b><p>An arc is how one character changes across the story. Start with a character and where they begin and end.</p></div>');
   }
-  return '<div class="page srm n30page n31page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to folders">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, 'arcs') +
+  return '<div class="page srm n30page n31page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to stories">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, 'arcs') +
     '<div class="n30nav"><button data-n32="view" data-v="list" class="' + (v === 'list' ? 'on' : '') + '">Arcs</button><button data-n32="view" data-v="journey" class="' + (v === 'journey' ? 'on' : '') + '">Journey</button><button class="btn primary n30newb" data-n31="new" data-k="arcs">' + srPlus + ' New arc</button></div>' + body + '</div>';
 }
 n30Tabs = function (fid, cur) { const T = [['chars', 'Characters'], ['scenes', 'Scenes (' + n30List(fid).length + ')'], ['plot', 'Plot'], ['arcs', 'Arcs']]; return '<div class="n30tabs">' + T.map(t => '<button data-n30="tab" data-v="' + t[0] + '" class="' + (cur === t[0] ? 'on' : '') + '">' + t[1] + '</button>').join('') + '</div>'; };
@@ -5636,6 +5636,63 @@ document.addEventListener('change', e => { const t = e.target; if (!t.dataset ||
 .n32stg{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line);border-radius:10px}.n32stg textarea{width:100%}`;
   document.head.appendChild(st);
 }
+
+/* ===================== v33: Story Architecture as its own panel, linked to characters ===================== */
+state.srArea = state.srArea || 'chars';
+const n33Stories = () => (STORM.folders || []);
+const n33Counts = fid => ({ sc: n30List(fid).length, pl: n31L('plots', fid).length, ar: n31L('arcs', fid).length, ev: n31L('events', fid).length });
+n30Tabs = function (fid, cur) { const T = [['plot', 'Plot'], ['scenes', 'Scenes (' + n30List(fid).length + ')'], ['arcs', 'Arcs']]; return '<div class="n30tabs">' + T.map(t => '<button data-n30="tab" data-v="' + t[0] + '" class="' + (cur === t[0] ? 'on' : '') + '">' + t[1] + '</button>').join('') + '<button class="n30tabs-link" data-n33="tochars">Characters of this story &rarr;</button></div>'; };
+{
+  const _f = n29FolderPage;
+  n29FolderPage = function (fid) {
+    if (state.srArea === 'arch') { if (!['plot', 'scenes', 'arcs'].includes(state.srTab)) state.srTab = 'plot'; return _f(fid); }
+    state.srTab = 'chars'; let h = _f(fid);
+    h = h.replace(/<div class="n30tabs">[\s\S]*?<\/div>/, '');
+    return h.replace('<button class="btn primary" data-n29="fold-newchar">', '<button class="sr-linkbtn" data-n33="toarch">Open this story\'s architecture (plot, scenes, arcs) &rarr;</button><button class="btn primary" data-n29="fold-newchar">');
+  };
+}
+{
+  const _h = srHome;
+  srHome = function () {
+    const h = _h(); if (state.srFolder) return h;
+    const st = n33Stories(), none = n33Counts(''), hasNone = none.sc + none.pl + none.ar + none.ev > 0;
+    const card = (f, id) => { const c = n33Counts(id); const bits = [c.sc + ' scene' + (c.sc === 1 ? '' : 's'), c.pl + ' plotline' + (c.pl === 1 ? '' : 's'), c.ar + ' arc' + (c.ar === 1 ? '' : 's')]; return '<button class="n29fold" data-n33="arch-open" data-v="' + id + '"><span class="n29fi">' + icon('list', 22) + '</span><span class="sr-cmeta"><b>' + esc(f.name) + '</b><span class="sr-sub">' + bits.join(' · ') + '</span></span>' + srChev + '</button>'; };
+    const sec = '<section class="panel"><div class="panel-head"><h2>Story architecture</h2></div><p class="lead" style="margin:0">Plot, scenes and character arcs for each story. Linked to your characters.</p><button class="btn primary" data-n33="arch-new">' + srPlus + ' New story</button>' +
+      ((st.length || hasNone) ? '<div class="n29folds">' + st.map(f => card(f, f.id)).join('') + (hasNone ? card({ name: 'No story yet' }, '_none') : '') + '</div>' : '<p class="lead" style="margin:0">No stories yet. Create one to start building plot, scenes and arcs.</p>') + '</section>';
+    const i = h.lastIndexOf('</section></div>'); return i < 0 ? h : h.slice(0, i + 10) + sec + h.slice(i + 10);
+  };
+}
+{
+  const _c = srCharPage;
+  srCharPage = function (c) {
+    let h = _c(c);
+    const sc = STORM.scenes.filter(s => s.pov === c.id || (s.chars || []).includes(c.id)), ar = STORM.arcs.filter(a => a.char === c.id), ev = STORM.events.filter(e => (e.chars || []).includes(c.id));
+    if (!sc.length && !ar.length && !ev.length) return h;
+    const blk = '<div class="n29blk"><b>In the story architecture</b>' + ar.map(a => '<button class="sr-linkbtn" data-n31="edit" data-k="arcs" data-v="' + a.id + '">Arc: ' + esc(n31Name('arcs', a)) + '</button>').join('') + sc.map(s => '<button class="sr-linkbtn" data-n30="edit" data-v="' + s.id + '">Scene: ' + esc(n30Name(s)) + (s.pov === c.id ? ' (POV)' : '') + '</button>').join('') + ev.map(e => '<button class="sr-linkbtn" data-n31="edit" data-k="events" data-v="' + e.id + '">Event: ' + esc(n31Name('events', e)) + '</button>').join('') + '</div>';
+    return h.replace('<div class="sr-wlist">', blk + '<div class="sr-wlist">');
+  };
+}
+document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('[data-n29="fold-open"],[data-n29="fold-new"]'); if (t) { state.srArea = 'chars'; state.srTab = 'chars'; } }, true);
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-n33]'); if (!b) return; const a = b.dataset.n33, v = b.dataset.v;
+  if (a === 'arch-open') { state.srFolder = v; state.srArea = 'arch'; state.srTab = 'plot'; srRefresh(); }
+  else if (a === 'toarch') { state.srArea = 'arch'; state.srTab = 'plot'; srRefresh(); }
+  else if (a === 'tochars') { state.srArea = 'chars'; state.srTab = 'chars'; srRefresh(); }
+  else if (a === 'arch-new') srAsk('New story', 'Name your story. Its plot, scenes, arcs and characters all belong to it.', '', 'Create', name => { name = (name || '').trim() || 'Untitled story'; const f = { id: srId(), name, docId: '', created: Date.now() }; (STORM.folders = STORM.folders || []).push(f); srSave(); state.srFolder = f.id; state.srArea = 'arch'; state.srTab = 'plot'; srRefresh(); });
+  else if (a === 'wopen') { const p = $('#srpanel'); if (p) p.remove(); state.srFolder = v; state.srArea = 'arch'; state.srTab = b.dataset.t || 'plot'; v32Return = location.hash; location.hash = '#storm'; setTimeout(() => { try { srRefresh(); } catch (e) {} }, 0); }
+});
+{
+  const _tp = srTryPanel;
+  srTryPanel = function () {
+    const was = !!$('#srpanel'), r = _tp(); const p = $('#srpanel'); if (!r || was || !p) return r;
+    const doc = state.route && state.route.id, sd = STORM.scenes.filter(s => s.docId === doc).map(s => s.folderId);
+    let st = n33Stories().filter(f => f.docId === doc || sd.includes(f.id)); const linked = st.length > 0; if (!st.length) st = n33Stories().slice(0, 5);
+    const body = st.length ? st.map(f => { const c = n33Counts(f.id), sc = n30List(f.id).slice(0, 6); return '<div class="sr-pg"><div class="sr-pg-h"><b>' + esc(f.name) + '</b></div><div class="n30chips"><button class="pill" data-n33="wopen" data-v="' + f.id + '" data-t="plot">Plot (' + c.pl + ')</button><button class="pill" data-n33="wopen" data-v="' + f.id + '" data-t="scenes">Scenes (' + c.sc + ')</button><button class="pill" data-n33="wopen" data-v="' + f.id + '" data-t="arcs">Arcs (' + c.ar + ')</button></div>' + sc.map(s => '<button class="sr-brow" data-n30="edit" data-v="' + s.id + '"><span><b>' + esc(n30Name(s)) + '</b><i>' + esc(s.status || 'No status') + (s.chapter ? ' · ' + esc(s.chapter) : '') + '</i></span></button>').join('') + '</div>'; }).join('') : '<div class="sr-sub">No stories yet. Create one in the Storm Room.</div>';
+    const d = document.createElement('div'); d.className = 'n33wp'; d.innerHTML = '<div class="sr-pg"><div class="sr-pg-h"><b>Story architecture' + (linked ? ' (linked)' : '') + '</b></div></div>' + body;
+    const pb = p.querySelector('.sr-pbody'); if (pb) pb.appendChild(d); return r;
+  };
+}
+{ const st = document.createElement('style'); st.id = 'n33css'; st.textContent = `.n30tabs-link{border:0!important;background:none!important;color:#7A3A17!important;text-decoration:underline;font:600 13px inherit;cursor:pointer;min-height:38px}.n33wp{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}`; document.head.appendChild(st); }
 
 document.addEventListener('selectionchange', updateToolbar);
 
