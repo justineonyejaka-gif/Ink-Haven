@@ -1831,7 +1831,7 @@ function WritingView() {
   return `<div class="page">
     <div class="topline"><h1>Your documents</h1></div>
     <p class="lead">Essays, chapters, poems and notes all live here. No project needed.</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" data-action="new-doc">${icon('plus')}New document</button><a class="btn" href="#projects">${icon('folder')}My Projects</a><button class="btn" data-ed="import">${icon('upload')}Import a file</button></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" data-action="new-doc">${icon('plus')}New document</button><a class="btn" href="#projects">${icon('folder')}My Projects</a><button class="btn" data-n36="tpl">${icon('feather')}From a template</button><button class="btn" data-ed="import">${icon('upload')}Import a file</button></div>
     ${list.length ? `<ul class="list">${list.map(d => `<li style="display:flex;align-items:center"><a class="row" href="#doc-${d.id}"><span class="ic">${icon('pen')}</span><span class="txt"><span class="name">${esc(titleOf(d))}</span><span class="sub">${esc(d.plain.slice(0, 80) || 'Empty document')}</span><span class="sub">Edited ${esc(relTime(d.updated))}</span></span></a><button class="icon-btn" data-action="trash-item" data-id="${d.id}" aria-label="Move ${esc(titleOf(d))} to Trash" style="margin-right:6px">${icon('trash')}</button></li>`).join('')}</ul>`
       : `<div class="empty"><h3>No documents yet</h3><p class="lead">Start with a blank page. It saves as you type.</p><button class="btn primary" data-action="new-doc">${icon('plus')}Start writing</button></div>`}
     <a class="link" href="#trash">Trash (${trashed().length})</a>
@@ -2443,7 +2443,7 @@ function popHtmlExt(kind) {
   }
   if (kind === 'more') {
     const W = (ic, ti, ca, at, on) => `<button class="mw${on ? ' on' : ''}" ${at}><span class="mwi">${icon(ic)}</span><b>${ti}</b><i>${ca}</i></button>`;
-    return `<div class="mwg">${W('pen', 'Edit mode', 'Type and format', 'data-ed="mode" data-v="edit"', !edRead && !edFs)}${W('eye', 'Read mode', 'Only read, no keyboard', 'data-ed="mode" data-v="read"', edRead)}${W('expand', 'Full screen', 'Paper fills the screen', 'data-ed="mode" data-v="fs"', edFs)}${W('toolbar', state.set.tbOff ? 'Show toolbar' : 'Hide toolbar', 'Or double-tap the page', 'data-ed="tb-toggle"')}${window.__installEvt ? W('download', 'Install app', 'Add Ink Haven to your phone', 'data-ed="install-app"') : ''}${W('toolbar', 'Reset toolbar', 'Put the tabs back in place', 'data-ed="dock-reset"')}${W('paper', 'Paper', 'Lines, colour, margins', 'data-action="paper"')}${W('find', 'Find and replace', 'Search this document', 'data-ed="pop" data-v="find"')}${W('headfoot', 'Header and footer', 'Top and bottom text', 'data-ed="pop" data-v="hf"')}${W('speaker', 'Read aloud', 'Listen to your writing', 'data-ed="pop" data-v="read"')}${W('upload', 'Import', 'Bring in a document', 'data-ed="import"')}${W('download', 'Export', 'Word, EPUB, HTML and more', 'data-ed="pop" data-v="export"')}</div>${closeBtn}`;
+    return `<div class="mwg">${W('pen', 'Edit mode', 'Type and format', 'data-ed="mode" data-v="edit"', !edRead && !edFs)}${W('eye', 'Read mode', 'Only read, no keyboard', 'data-ed="mode" data-v="read"', edRead)}${W('expand', 'Full screen', 'Paper fills the screen', 'data-ed="mode" data-v="fs"', edFs)}${W('toolbar', state.set.tbOff ? 'Show toolbar' : 'Hide toolbar', 'Or double-tap the page', 'data-ed="tb-toggle"')}${window.__installEvt ? W('download', 'Install app', 'Add Ink Haven to your phone', 'data-ed="install-app"') : ''}${W('toolbar', 'Reset toolbar', 'Put the tabs back in place', 'data-ed="dock-reset"')}${W('list', 'Tags', 'Label this document', 'data-ed="pop" data-v="tags"')}${W('bell', 'Word goal', 'Target and ding', 'data-ed="pop" data-v="goal"')}${W('paper', 'Paper', 'Lines, colour, margins', 'data-action="paper"')}${W('find', 'Find and replace', 'Search this document', 'data-ed="pop" data-v="find"')}${W('headfoot', 'Header and footer', 'Top and bottom text', 'data-ed="pop" data-v="hf"')}${W('speaker', 'Read aloud', 'Listen to your writing', 'data-ed="pop" data-v="read"')}${W('upload', 'Import', 'Bring in a document', 'data-ed="import"')}${W('download', 'Export', 'Word, EPUB, HTML and more', 'data-ed="pop" data-v="export"')}</div>${closeBtn}`;
   }
   if (kind === 'symbols') return `<span class="lab">Symbols</span><div class="shape-grid">${SYMBOLS.map(c => `<button class="shape-btn" style="width:42px;height:42px;font-size:19px" data-ed="sym" data-v="${c}">${c}</button>`).join('')}</div>${closeBtn}`;
   if (kind === 'fn') return `<span class="lab">Footnote</span><textarea id="fntext" rows="2" placeholder="Type the note" style="flex:1;min-width:180px"></textarea><button class="btn primary" data-ed="fn-go" style="min-height:40px">Add footnote</button>${closeBtn}`;
@@ -3793,7 +3793,7 @@ function srTryPanel() {
   const body = linked.map(({ o, beats, whole }) => { const list = whole && !beats.length ? srKids(o, null) : beats;
     return `<div class="sr-pg"><div class="sr-pg-h"><b>${esc(o.name)}</b><button class="sr-linkbtn" data-open="${o.id}">Open outline</button></div>${list.map(b => `<div class="sr-pb sr-ed" data-ebeat="${o.id}|${b.id}"><div class="sr-pb-t">${esc(b.title)}</div>${b.desc ? `<div class="sr-sub">${esc(b.desc)}</div>` : ''}${b.guide ? `<div class="sr-sub it">Guidance: ${esc(b.guide)}</div>` : ''}${b.notes ? `<div class="sr-sub">Notes: ${esc(b.notes)}</div>` : ''}<div class="sr-seg3 sm" data-oid="${o.id}" data-bid="${b.id}">${SR_STATUS.map(x => `<button data-s="${x[0]}" aria-pressed="${b.status === x[0]}">${x[1]}</button>`).join('')}</div></div>`).join('')}</div>`; }).join('');
   const cbody = lchars.map(c => `<div class="sr-pg"><div class="sr-pg-h"><b>${esc(c.name)}</b><button class="sr-linkbtn" data-opench="${c.id}">Open profile</button></div>${c.widgets.filter(w => w.body || w.img).map(w => `<div class="sr-pb sr-ed" data-ewid="${c.id}|${w.id}"><div class="sr-pb-t">${esc(w.title)}</div>${w.body ? `<div class="sr-sub">${esc(w.body.slice(0, 220))}</div>` : ''}</div>`).join('') || '<div class="sr-sub">No details written yet.</div>'}</div>`).join('');
-  const allC = STORM.characters.filter(c => !c.archived).sort((a, b) => b.updated - a.updated), allO = STORM.outlines.filter(o => !o.archived);
+  const sc34 = n34Scope(r.id), allC = STORM.characters.filter(c => !c.archived && sc34.char(c)).sort((a, b) => b.updated - a.updated), allO = STORM.outlines.filter(o => !o.archived && sc34.outline(o));
   const browse = () => `<div class="sr-pg"><div class="sr-pg-h"><b>Characters</b></div>${allC.length ? allC.map(c => `<button class="sr-brow" data-view="c|${c.id}">${srAv(c)}<span><b>${esc(c.name || 'Unnamed')}</b><i>${esc(c.role || '')}</i></span></button>`).join('') : '<div class="sr-sub">No characters yet.</div>'}</div><div class="sr-pg"><div class="sr-pg-h"><b>Outlines</b></div>${allO.length ? allO.map(o => `<button class="sr-brow" data-view="o|${o.id}"><span><b>${esc(o.name || 'Outline')}</b><i>${o.items.length} items</i></span></button>`).join('') : '<div class="sr-sub">No outlines yet.</div>'}</div>`;
   const detail = key => { const [k, id] = key.split('|');
     if (k === 'c') { const c = STORM.characters.find(x => x.id === id); if (!c) return browse(); return `<button class="sr-back" data-view="">&#8592; All</button><div class="sr-pg"><div class="sr-pg-h">${srAv(c, true)}<b>${esc(c.name || 'Unnamed')}</b></div>${c.role ? `<div class="sr-sub">${esc(c.role)}</div>` : ''}${c.widgets.filter(w => w.body || w.img).map(w => `<div class="sr-pb"><div class="sr-pb-t">${esc(w.title)}</div>${w.img ? `<img alt="" src="${w.img}" style="max-width:100%;border-radius:10px;margin:4px 0">` : ''}${w.body ? `<div class="sr-sub" style="white-space:pre-wrap">${esc(w.body)}</div>` : ''}</div>`).join('') || '<div class="sr-sub">Nothing written in this profile yet.</div>'}<button class="sr-linkbtn" data-opench="${c.id}">Open full profile</button></div>`; }
@@ -4353,7 +4353,7 @@ document.addEventListener('input', e => {
 setInterval(() => {
   if (edDoc && $('#editor') && wLast.id !== edDoc.id) wLast = { id: edDoc.id, w: wordCount($('#editor').textContent.replace(/​/g, '')) };
   const h = new Date().getHours(), k = wDay();
-  if (h >= 20 && (WS.days[k] || 0) < WS.goal) { const st = wStreak(); if (st.cur > 0) nfPush('rem', 'Keep your streak alive', st.cur + '-day streak. ' + (WS.goal - (WS.days[k] || 0)) + ' words to go today.', { key: 'streak-' + k }); }
+  if (false) { const st = wStreak(); if (st.cur > 0) nfPush('rem', 'Keep your streak alive', st.cur + '-day streak. ' + (WS.goal - (WS.days[k] || 0)) + ' words to go today.', { key: 'streak-' + k }); }
 }, 60000);
 const wBottle = (pct, id) => { const h = Math.round(54 * Math.min(1, Math.max(0, pct))); return `<svg viewBox="0 0 64 80" width="64" height="80" aria-hidden="true"><defs><clipPath id="${id}"><path d="M22 6h20v10c0 3 10 6 10 18v34c0 5-4 9-9 9H21c-5 0-9-4-9-9V34c0-12 10-15 10-18z"/></clipPath></defs><g clip-path="url(#${id})"><rect x="0" y="${77 - h}" width="64" height="${h + 3}" fill="#2D3A8C"/></g><path d="M22 6h20v10c0 3 10 6 10 18v34c0 5-4 9-9 9H21c-5 0-9-4-9-9V34c0-12 10-15 10-18z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M19 6h26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`; };
 function wStatsSheet() {
@@ -4366,7 +4366,7 @@ function wStatsSheet() {
   wSheet('Writing statistics', `<div class="wbot">${wBottle(today / g, 'wbk')}<div><b style="font-size:20px">${today.toLocaleString()} / ${g.toLocaleString()} words today</b><p>${today >= g ? 'The ink bottle is full.' : (g - today).toLocaleString() + ' words to fill it.'}</p></div></div>
     <div class="wstat"><div><b>${st.cur}</b><span>day streak</span></div><div><b>${st.best}</b><span>best streak</span></div><div><b>${Math.round(last30 / 30).toLocaleString()}</b><span>words a day, last 30 days</span></div><div><b>${total.toLocaleString()}</b><span>words across ${docs().length} documents</span></div><div><b>${sp.length}</b><span>sprints done</span></div><div><b>${best.toLocaleString()}</b><span>best sprint (words)</span></div></div>
     <div class="wbars" aria-label="Words in the last 7 days">${days7.map(d => `<div><span>${d.v || ''}</span><i style="height:${Math.max(2, Math.round(d.v / mx * 70))}px"></i>${d.l}</div>`).join('')}</div>
-    <label>Daily goal (words)<input id="wgoal" type="number" min="10" max="20000" step="10" value="${g}"></label>
+    <button class="wb" data-n36="goal">Reminder and goal settings</button><label>Daily goal (words)<input id="wgoal" type="number" min="10" max="20000" step="10" value="${g}"></label>
     <p>Words are counted as you type on this device. A day counts toward your streak when you reach your goal.</p>`);
 }
 document.addEventListener('change', e => { if (e.target.id === 'wgoal') { WS.goal = Math.max(10, Math.min(20000, parseInt(e.target.value, 10) || 100)); wsSave(); wStatsSheet(); } });
@@ -4490,7 +4490,7 @@ async function wManuGo() {
 }
 
 /* Writing desk on Home, and click wiring */
-const wDesk = () => { const st = wStreak(), t = WS.days[wDay()] || 0; return `<section class="panel wdesk" aria-labelledby="h-desk"><div class="panel-head"><h2 id="h-desk">Writing desk</h2></div><div class="wbot" style="margin-bottom:10px">${wBottle(t / WS.goal, 'wbh')}<div><b>${st.cur}-day streak</b><p style="margin:2px 0 0;color:var(--fg-muted);font-size:13px">${t.toLocaleString()} / ${WS.goal.toLocaleString()} words today</p></div></div><div class="chips">${[['prompt', 'Today\'s prompt', 'prompt'], ['stats', 'Statistics', 'stats'], ['sprint', 'Sprint', 'sprint'], ['manu', 'Manuscript', 'manu']].map(c => `<button class="pill" data-w34="${c[0]}">${wi(c[2])}${c[1]}</button>`).join('')}<button class="pill" data-t35="profile">Profile</button></div></section>`; };
+const wDesk = () => { const st = wStreak(), t = WS.days[wDay()] || 0; return `<section class="panel wdesk" aria-labelledby="h-desk"><div class="panel-head"><h2 id="h-desk">Writing desk</h2></div><div class="wbot" style="margin-bottom:10px">${wBottle(t / WS.goal, 'wbh')}<div><b>${st.cur}-day streak</b><p style="margin:2px 0 0;color:var(--fg-muted);font-size:13px">${t.toLocaleString()} / ${WS.goal.toLocaleString()} words today</p></div></div><div class="chips">${[['prompt', 'Today\'s prompt', 'prompt'], ['stats', 'Statistics', 'stats'], ['sprint', 'Sprint', 'sprint'], ['manu', 'Manuscript', 'manu']].map(c => `<button class="pill" data-w34="${c[0]}">${wi(c[2])}${c[1]}</button>`).join('')}<button class="pill" data-n36="goal">Daily goal</button><button class="pill" data-n36="tpl">Templates</button><button class="pill" data-t35="profile">Profile</button></div></section>`; };
 document.addEventListener('click', e => {
   const el = e.target.closest && e.target.closest('[data-w34]'); if (!el) return; const a = el.dataset.w34;
   if (a === 'stats') wStatsSheet();
@@ -4792,7 +4792,7 @@ function mMenus() {
   const I = n => icon(n, 18), W = n => wi(n), G = t => `<b class="mg">${t}</b>`;
   const E = (l, ic, d, o) => Object.assign({ l, ic, d }, o || {});
   return {
-    File: [E('New document', I('plus'), { action: 'new-doc' }), E('My documents', I('folder'), null, { f: () => { try { flushSave(); } catch (x) {} location.hash = '#writing'; } }), 0,
+    File: [E('New document', I('plus'), { action: 'new-doc' }), E('New from template', I('feather'), null, { f: () => n36TplSheet() }), E('My documents', I('folder'), null, { f: () => { try { flushSave(); } catch (x) {} location.hash = '#writing'; } }), 0,
       E('Import a file…', I('upload'), { ed: 'import' }), E('Download or export…', I('download'), { ed: 'pop', v: 'export' }), E('Download as PDF', I('download'), null, { f: () => n29Pdf() }), E('Tags…', I('list'), { ed: 'pop', v: 'tags' }), E('Manuscript export…', W('manu'), { w34: 'manu' }), 0, E('Snapshots (version history)', W('snap'), { w34: 'snap' })],
     Edit: [E('Undo', I('uturn'), { cmd: 'undo' }, { sc: 'Ctrl+Z' }), E('Redo', I('rturn'), { cmd: 'redo' }, { sc: 'Ctrl+Y' }), 0,
       E('Select all', I('list'), null, { sc: 'Ctrl+A', f: () => { const e = $('#editor'); if (e) { e.focus(); document.execCommand('selectAll'); } } }), 0,
@@ -5415,7 +5415,7 @@ document.addEventListener('click', e => { if (e.target.closest && e.target.close
 }
 
 /* ===================== v31: Plot Architecture (Overview, Main plot, Subplots, Conflicts, Events, Board, Timeline) ===================== */
-['plots', 'conflicts', 'events', 'devs', 'arcs'].forEach(k => { if (!Array.isArray(STORM[k])) STORM[k] = []; });
+['plots', 'conflicts', 'events', 'devs', 'arcs', 'decisions'].forEach(k => { if (!Array.isArray(STORM[k])) STORM[k] = []; });
 const N31_STAT = ['Developing', 'Active', 'On Hold', 'Completed'], N31_IMP = ['Low', 'Medium', 'High'];
 const N31_MAIN_SEC = ['Central Premise', 'Inciting Development', 'Central Conflict', 'Stakes', 'Major Developments', 'Turning Points', 'Climax', 'Resolution'];
 const N31_SUBCAT = ['Relationship', 'Personal Development', 'Family', 'Mystery', 'Political', 'Social', 'Secondary Conflict', 'Other'];
@@ -5436,6 +5436,10 @@ const N31 = {
     { k: 'title', l: 'Arc title', t: 'text' }, { k: 'char', l: 'Character', t: 'char' }, { k: 'type', l: 'Arc type', t: 'text', dl: ['Personal growth', 'Emotional', 'Moral', 'Relationship', 'Identity', 'Redemption', 'Fall', 'Flat (stays the same)'] }, { k: 'summary', l: 'Summary', t: 'area' },
     { k: 'start', l: 'Starting point (who they are at the start)', t: 'area' }, { k: 'end', l: 'Ending point (who they are at the end)', t: 'area' }, { k: 'desire', l: 'What they want', t: 'area' }, { k: 'fear', l: 'What they fear or believe wrongly', t: 'area' },
     { k: 'plots', l: 'Related plotlines', t: 'ref', r: 'plots' }, { k: 'conflicts', l: 'Related conflicts', t: 'ref', r: 'conflicts' }, { k: 'events', l: 'Related events', t: 'ref', r: 'events' }, { k: 'notes', l: 'Notes', t: 'area' }, { k: 'stages', t: 'stages' }] },
+  decisions: { one: 'decision', f: [
+    { k: 'title', l: 'Decision', t: 'text' }, { k: 'char', l: 'Who decided', t: 'char' }, { k: 'type', l: 'Type', t: 'text', dl: ['Major', 'Minor', 'Moral', 'Strategic', 'Emotional', 'Irreversible'] }, { k: 'when', l: 'When (story time, optional)', t: 'text' },
+    { k: 'desc', l: 'What was decided', t: 'area' }, { k: 'context', l: 'Why (the situation and pressure)', t: 'area' }, { k: 'options', l: 'Other options they had', t: 'area' }, { k: 'consequences', l: 'Consequences', t: 'area' }, { k: 'change', l: 'What it changed in the story', t: 'area' },
+    { k: 'chars', l: 'Characters affected', t: 'chars' }, { k: 'plots', l: 'Plotlines', t: 'ref', r: 'plots' }, { k: 'conflicts', l: 'Conflicts', t: 'ref', r: 'conflicts' }, { k: 'events', l: 'Events', t: 'ref', r: 'events' }, { k: 'scenes', l: 'Scenes', t: 'ref', r: 'scenes' }, { k: 'arcs', l: 'Character arcs', t: 'ref', r: 'arcs' }, { k: 'leads', l: 'Leads to these decisions', t: 'ref', r: 'decisions' }, { k: 'notes', l: 'Notes', t: 'area' }] },
   devs: { one: 'development', f: [
     { k: 'title', l: 'Development', t: 'text' }, { k: 'desc', l: 'Description', t: 'area' }, { k: 'group', l: 'Group', t: 'text' }, { k: 'plots', l: 'Advances these plotlines', t: 'ref', r: 'plots' }, { k: 'notes', l: 'Notes', t: 'area' }] }
 };
@@ -5455,6 +5459,7 @@ function n31CardHtml(k, r) {
   const meta = [];
   if (k === 'plots') { if (r.status) meta.push(r.status); if (r.importance) meta.push(r.importance + ' importance'); if (r.category) meta.push(r.category); }
   if (k === 'conflicts' && r.type) meta.push(r.type);
+  if (k === 'decisions') { const c = r.char && srChar(r.char); if (c) meta.push('By ' + n29Full(c)); if (r.type) meta.push(r.type); if (r.when) meta.push(r.when); }
   if (k === 'arcs') { const c = r.char && srChar(r.char); if (c) meta.push(n29Full(c)); if (r.type) meta.push(r.type); if ((r.stages || []).length) meta.push(r.stages.length + ' stage(s)'); }
   if (k === 'events') { if (r.when || r.cpos !== '') meta.push(r.when || ('Time ' + r.cpos)); if (r.loc) meta.push(r.loc); }
   const sub = r.summary || r.desc || '';
@@ -5542,7 +5547,7 @@ function n31Edit(k, id) {
 }
 function n31Close() { const d = $('#n30ed'); if (d) d.remove(); srRefresh(); }
 function n31Cur() { const d = $('#n30ed'); if (!d || !d.dataset.n31k) return null; return { k: d.dataset.n31k, r: n31Get(d.dataset.n31k, d.dataset.id) }; }
-function n31Strip(k, id) { /* remove references to a deleted record, never delete the records that pointed to it */ ['plots', 'conflicts', 'events', 'devs', 'arcs'].forEach(t => STORM[t].forEach(r => { N31[t].f.forEach(f => { if (f.t === 'ref' && f.r === k && r[f.k]) r[f.k] = r[f.k].filter(x => x !== id); }); })); }
+function n31Strip(k, id) { /* remove references to a deleted record, never delete the records that pointed to it */ ['plots', 'conflicts', 'events', 'devs', 'arcs', 'decisions'].forEach(t => STORM[t].forEach(r => { N31[t].f.forEach(f => { if (f.t === 'ref' && f.r === k && r[f.k]) r[f.k] = r[f.k].filter(x => x !== id); }); })); }
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-n31]'); if (!b) return; const a = b.dataset.n31, v = b.dataset.v, k = b.dataset.k, fid = state.srFolder;
   if (a === 'view') { n31S.v = v; n31S.q = ''; srRefresh(); }
@@ -5693,6 +5698,231 @@ document.addEventListener('click', e => {
   };
 }
 { const st = document.createElement('style'); st.id = 'n33css'; st.textContent = `.n30tabs-link{border:0!important;background:none!important;color:#7A3A17!important;text-decoration:underline;font:600 13px inherit;cursor:pointer;min-height:38px}.n33wp{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}`; document.head.appendChild(st); }
+
+/* ===================== v34: the writing-screen Storm Room panel only shows what is linked to the document ===================== */
+function n34Scope(docId) {
+  const stories = new Set(); (STORM.folders || []).forEach(f => { if (f.docId === docId) stories.add(f.id); }); STORM.scenes.forEach(s => { if (s.docId === docId && s.folderId) stories.add(s.folderId); });
+  const lo = new Set(srLinkedFor(docId).map(x => x.o.id));
+  const chars = STORM.characters.filter(c => !c.archived && (c.docId === docId || (c.folderId && stories.has(c.folderId))));
+  const set = new Set(chars.map(c => c.id));
+  return { stories, char: c => set.has(c.id), outline: o => lo.has(o.id) || o.docId === docId, linked: stories.size > 0 || chars.length > 0 || lo.size > 0 };
+}
+{
+  const _tp2 = srTryPanel;
+  srTryPanel = function () {
+    const was = !!$('#srpanel'), r = _tp2(); const p = $('#srpanel'); if (!r || was || !p) return r;
+    const doc = state.route && state.route.id, sc = n34Scope(doc), pb = p.querySelector('.sr-pbody'); if (!pb) return r;
+    const arch = pb.querySelector('.n33wp'); if (arch) arch.remove();
+    if (!sc.linked) { pb.innerHTML = '<div class="n34none"><b>This document isn\'t linked to a story yet</b><p>Link it to a story to see that story\'s characters, outlines, plot, scenes and arcs here.</p><button class="btn primary" data-n34="link">Link to a story</button></div>'; return r; }
+    const st = n33Stories().filter(f => sc.stories.has(f.id));
+    if (st.length) { const d = document.createElement('div'); d.className = 'n33wp'; d.innerHTML = '<div class="sr-pg"><div class="sr-pg-h"><b>Story architecture</b></div></div>' + st.map(f => { const c = n33Counts(f.id), sl = n30List(f.id).slice(0, 6); return '<div class="sr-pg"><div class="sr-pg-h"><b>' + esc(f.name) + '</b></div><div class="n30chips"><button class="pill" data-n33="wopen" data-v="' + f.id + '" data-t="plot">Plot (' + c.pl + ')</button><button class="pill" data-n33="wopen" data-v="' + f.id + '" data-t="scenes">Scenes (' + c.sc + ')</button><button class="pill" data-n33="wopen" data-v="' + f.id + '" data-t="arcs">Arcs (' + c.ar + ')</button></div>' + sl.map(s => '<button class="sr-brow" data-n30="edit" data-v="' + s.id + '"><span><b>' + esc(n30Name(s)) + '</b><i>' + esc(s.status || 'No status') + (s.chapter ? ' · ' + esc(s.chapter) : '') + '</i></span></button>').join('') + '</div>'; }).join(''); pb.appendChild(d); }
+    return r;
+  };
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-n34]'); if (!b) return; const doc = state.route && state.route.id; if (!doc) return;
+  const done = f => { f.docId = doc; srSave(); const m = $('#n34dlg'); if (m) m.remove(); toast('Linked to ' + f.name); srRefresh(); };
+  const d = document.createElement('div'); d.id = 'n34dlg'; d.className = 'sr-modal'; const st = n33Stories();
+  d.innerHTML = '<div class="sr-dlg" role="dialog" aria-modal="true"><h3>Link this document to a story</h3>' + (st.length ? '<div class="n29folds">' + st.map(f => '<button class="n29fold" data-s="' + f.id + '"><span class="sr-cmeta"><b>' + esc(f.name) + '</b><span class="sr-sub">' + (f.docId && f.docId !== doc ? 'Currently linked to another document; this moves the link' : 'Not linked yet') + '</span></span></button>').join('') + '</div>' : '<p>You have no stories yet.</p>') + '<div class="sr-dlg-b"><button class="btn" data-x="no">Cancel</button><button class="btn primary" data-x="new">New story for this document</button></div></div>';
+  d.addEventListener('click', ev => { const s = ev.target.closest('[data-s]'), x = ev.target.closest('[data-x]'); if (s) { const f = n29Folder(s.dataset.s); if (f) done(f); } else if (x && x.dataset.x === 'new') { d.remove(); srAsk('New story', 'Name your story. This document will be linked to it.', '', 'Create', name => { const f = { id: srId(), name: (name || '').trim() || 'Untitled story', docId: '', created: Date.now() }; (STORM.folders = STORM.folders || []).push(f); done(f); }); } else if (ev.target === d || (x && x.dataset.x === 'no')) d.remove(); });
+  document.body.appendChild(d);
+});
+{ const st = document.createElement('style'); st.id = 'n34css'; st.textContent = '.n34none{padding:18px 6px;text-align:center}.n34none p{opacity:.75;margin:6px 0 14px}'; document.head.appendChild(st); }
+
+/* ===================== v35: Story Decisions + Story Connections ===================== */
+if (!Array.isArray(STORM.decisions)) STORM.decisions = [];
+const N35 = {
+  characters: { l: 'Characters', c: '#7A3A17', list: f => n30Chars(f), name: c => n29Full(c) || 'Unnamed', get: id => srChar(id) },
+  plots: { l: 'Plotlines', c: '#2F6FE0', list: f => n31L('plots', f), name: r => n31Name('plots', r), get: id => n31Get('plots', id) },
+  arcs: { l: 'Arcs', c: '#8E52D6', list: f => n31L('arcs', f), name: r => n31Name('arcs', r), get: id => n31Get('arcs', id) },
+  conflicts: { l: 'Conflicts', c: '#C0392B', list: f => n31L('conflicts', f), name: r => n31Name('conflicts', r), get: id => n31Get('conflicts', id) },
+  events: { l: 'Events', c: '#B98F55', list: f => n31L('events', f), name: r => n31Name('events', r), get: id => n31Get('events', id) },
+  scenes: { l: 'Scenes', c: '#2E8B57', list: f => n30List(f), name: r => n30Name(r), get: id => n30Sc(id) },
+  decisions: { l: 'Decisions', c: '#D2691E', list: f => n31L('decisions', f), name: r => n31Name('decisions', r), get: id => n31Get('decisions', id) },
+  devs: { l: 'Developments', c: '#5D6D7E', list: f => n31L('devs', f), name: r => n31Name('devs', r), get: id => n31Get('devs', id) }
+};
+const n35Order = ['characters', 'plots', 'arcs', 'conflicts', 'events', 'scenes', 'decisions', 'devs'];
+const n35S = state.n35 = state.n35 || { dv: 'list', cv: 'explore', sel: '', hide: {}, q: '' };
+function n35Open(type, id) { if (type === 'characters') { v32Return = location.hash; location.hash = '#storm-c-' + id; } else if (type === 'scenes') n30Edit(id); else n31Edit(type, id); }
+function n35Graph(fid) {
+  const nodes = new Map(), edges = new Map(), deg = new Map();
+  n35Order.forEach(t => N35[t].list(fid).forEach(r => nodes.set(t + ':' + r.id, { t, id: r.id, r })));
+  const add = (t1, id1, t2, id2) => { if (!id1 || !id2) return; const a = t1 + ':' + id1, b = t2 + ':' + id2; if (a === b || !nodes.has(a) || !nodes.has(b)) return; const k = a < b ? a + '|' + b : b + '|' + a; if (!edges.has(k)) { edges.set(k, [a, b]); deg.set(a, (deg.get(a) || 0) + 1); deg.set(b, (deg.get(b) || 0) + 1); } };
+  const many = (t, r, field, tt) => (r[field] || []).forEach(x => add(t, r.id, tt, x));
+  nodes.forEach(({ t, r }) => {
+    if (t === 'plots') { many(t, r, 'chars', 'characters'); many(t, r, 'conflicts', 'conflicts'); many(t, r, 'events', 'events'); }
+    if (t === 'conflicts') { many(t, r, 'chars', 'characters'); many(t, r, 'plots', 'plots'); many(t, r, 'events', 'events'); }
+    if (t === 'events') { many(t, r, 'chars', 'characters'); many(t, r, 'plots', 'plots'); many(t, r, 'conflicts', 'conflicts'); many(t, r, 'scenes', 'scenes'); }
+    if (t === 'devs') many(t, r, 'plots', 'plots');
+    if (t === 'arcs') { add(t, r.id, 'characters', r.char); many(t, r, 'plots', 'plots'); many(t, r, 'conflicts', 'conflicts'); many(t, r, 'events', 'events'); (r.stages || []).forEach(s => add(t, r.id, 'scenes', s.scene)); }
+    if (t === 'scenes') { add(t, r.id, 'characters', r.pov); many(t, r, 'chars', 'characters'); }
+    if (t === 'decisions') { add(t, r.id, 'characters', r.char); many(t, r, 'chars', 'characters'); many(t, r, 'plots', 'plots'); many(t, r, 'conflicts', 'conflicts'); many(t, r, 'events', 'events'); many(t, r, 'scenes', 'scenes'); many(t, r, 'arcs', 'arcs'); many(t, r, 'leads', 'decisions'); }
+  });
+  const nb = new Map(); edges.forEach(([a, b]) => { (nb.get(a) || nb.set(a, []).get(a)).push(b); (nb.get(b) || nb.set(b, []).get(b)).push(a); });
+  return { nodes, edges, deg, nb };
+}
+const n35Item = (k, G) => { const n = G.nodes.get(k); return n ? '<div class="n30sc"><div class="n35it"><button class="n30open" data-n35="open" data-k="' + n.t + '" data-v="' + n.id + '"><b>' + esc(N35[n.t].name(n.r)) + '</b><span class="n30pov" style="color:' + N35[n.t].c + '">' + N35[n.t].l.replace(/s$/, '') + '</span></button><button class="n35go" data-n35="sel" data-v="' + k + '" aria-label="Explore from this">Explore</button></div></div>' : ''; };
+/* ----- decisions ----- */
+function n35DecPage(fid) {
+  const v = n35S.dv, all = n31L('decisions', fid), q = (n35S.q || '').toLowerCase(), l = all.filter(d => !q || JSON.stringify(d).toLowerCase().includes(q));
+  let body = '<div class="n30fl"><input id="n35q" type="search" value="' + esc(n35S.q) + '" placeholder="Search decisions"></div>';
+  if (!all.length) body += '<div class="n30empty"><b>No decisions yet</b><p>A decision is a choice a character makes that changes the story. Record who chose, why, what else they could have done, and what it led to.</p></div>';
+  else if (v === 'list') body += '<div class="n30lst">' + l.map(d => n31CardHtml('decisions', d)).join('') + '</div>';
+  else if (v === 'char') {
+    const cs = n30Chars(fid), groups = cs.map(c => ({ n: n29Full(c), l: l.filter(d => d.char === c.id) })).filter(g => g.l.length), none = l.filter(d => !n32Char(d.char));
+    body += groups.map(g => '<p class="n30gh">' + esc(g.n) + ' <small>(' + g.l.length + ')</small></p><div class="n30lst">' + g.l.map(d => n31CardHtml('decisions', d)).join('') + '</div>').join('') + (none.length ? '<p class="n30gh">No character chosen</p><div class="n30lst">' + none.map(d => n31CardHtml('decisions', d)).join('') + '</div>' : '');
+  } else {
+    const led = new Set(); all.forEach(d => (d.leads || []).forEach(x => led.add(x))); const seen = new Set();
+    const node = (d, depth) => { if (seen.has(d.id) || depth > 8) return '<div class="n35ch" style="margin-left:' + depth * 16 + 'px"><span class="n30pov">(repeats) ' + esc(n31Name('decisions', d)) + '</span></div>'; seen.add(d.id); return '<div class="n35ch" style="margin-left:' + depth * 16 + 'px">' + (depth ? '<i class="n35ar">&#8627;</i>' : '') + n31CardHtml('decisions', d) + '</div>' + (d.leads || []).map(x => n31Get('decisions', x)).filter(Boolean).map(x => node(x, depth + 1)).join(''); };
+    body += '<p class="lead n30hint">Each decision with the decisions it led to. Set "Leads to these decisions" when you edit one.</p>' + all.filter(d => !led.has(d.id)).map(d => node(d, 0)).join('') + all.filter(d => !seen.has(d.id)).map(d => node(d, 0)).join('');
+  }
+  return body;
+}
+/* ----- connections ----- */
+function n35ConnPage(fid) {
+  const G = n35Graph(fid), v = n35S.cv, total = G.nodes.size;
+  if (!total) return '<div class="n30empty"><b>Nothing to connect yet</b><p>Add characters, scenes, plotlines or arcs and link them together. This screen then shows how everything fits.</p></div>';
+  let body = '';
+  if (v === 'explore') {
+    const opts = n35Order.map(t => { const l = N35[t].list(fid); return l.length ? '<optgroup label="' + N35[t].l + '">' + l.map(r => '<option value="' + t + ':' + r.id + '"' + (n35S.sel === t + ':' + r.id ? ' selected' : '') + '>' + esc(N35[t].name(r)) + '</option>').join('') + '</optgroup>' : ''; }).join('');
+    body += '<label class="n35lab">Explore from<select id="n35sel"><option value="">Choose something</option>' + opts + '</select></label>';
+    const n = G.nodes.get(n35S.sel);
+    if (n) {
+      const ns = (G.nb.get(n35S.sel) || []).slice().sort((a, b) => n35Order.indexOf(a.split(':')[0]) - n35Order.indexOf(b.split(':')[0]));
+      body += '<div class="n35head" style="border-color:' + N35[n.t].c + '"><b>' + esc(N35[n.t].name(n.r)) + '</b><span>' + N35[n.t].l.replace(/s$/, '') + ' &middot; ' + ns.length + ' connection' + (ns.length === 1 ? '' : 's') + '</span><button class="btn" data-n35="open" data-k="' + n.t + '" data-v="' + n.id + '">Open</button></div>';
+      if (!ns.length) body += '<p class="lead n30hint">Nothing is linked to this yet. Open it and use the link pickers.</p>';
+      n35Order.forEach(t => { const g = ns.filter(k => k.startsWith(t + ':')); if (g.length) body += '<p class="n30gh" style="color:' + N35[t].c + '">' + N35[t].l + ' <small>(' + g.length + ')</small></p><div class="n30lst">' + g.map(k => n35Item(k, G)).join('') + '</div>'; });
+    } else {
+      const top = [...G.deg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+      body += '<p class="lead" style="margin:10px 0 4px">' + total + ' items, ' + G.edges.size + ' links</p>' + (top.length ? '<p class="n30gh">Most connected</p><div class="n30lst">' + top.map(([k, d]) => n35Item(k, G)).join('') + '</div>' : '<p class="lead n30hint">No links yet. Open any item and tick the characters, plotlines, events or scenes it relates to.</p>');
+    }
+  } else if (v === 'gaps') {
+    const out = [], chk = (t, r, msg) => out.push([t, r, msg]);
+    G.nodes.forEach(({ t, r }, k) => {
+      if (!(G.deg.get(k) || 0)) chk(t, r, 'Not linked to anything');
+      else {
+        if (t === 'scenes' && !r.pov) chk(t, r, 'No POV character');
+        if (t === 'events' && !(r.plots || []).some(id => n31Get('plots', id))) chk(t, r, 'Not part of a plotline');
+        if (t === 'arcs' && !(r.stages || []).length) chk(t, r, 'No stages yet');
+        if (t === 'conflicts' && !(r.plots || []).some(id => n31Get('plots', id)) && !(r.events || []).length) chk(t, r, 'Not tied to a plotline or event');
+        if (t === 'characters' && !STORM.arcs.some(a => a.char === r.id) && n30List(fid).length) chk(t, r, 'No arc yet');
+      }
+    });
+    body += '<p class="lead n30hint">Loose ends worth a look. Some are fine on purpose.</p>' + (out.length ? '<div class="n30lst">' + out.map(([t, r, m]) => '<div class="n30sc"><div class="n35it"><button class="n30open" data-n35="open" data-k="' + t + '" data-v="' + r.id + '"><b>' + esc(N35[t].name(r)) + '</b><span class="n30pov">' + N35[t].l.replace(/s$/, '') + ' &middot; ' + m + '</span></button></div></div>').join('') + '</div>' : '<div class="n30empty"><b>No loose ends found</b></div>');
+  } else {
+    if (innerWidth < 900) return '<div class="n30empty"><b>The map is part of the desktop version</b><p>Use Explore on your phone to follow any link, and Loose ends to find gaps.</p></div>';
+    const types = n35Order.filter(t => N35[t].list(fid).length), shown = types.filter(t => !n35S.hide[t]), colW = 220, rowH = 34, pad = 64;
+    const pos = new Map(); shown.forEach((t, ci) => N35[t].list(fid).forEach((r, ri) => pos.set(t + ':' + r.id, { x: 20 + ci * colW, y: pad + ri * rowH, t, r })));
+    const H = pad + Math.max(1, ...shown.map(t => N35[t].list(fid).length)) * rowH + 10, W = 20 + shown.length * colW;
+    let svg = '<svg class="n35svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+    G.edges.forEach(([a, b], k) => { const pa = pos.get(a), pb = pos.get(b); if (!pa || !pb) return; const [l, r] = pa.x <= pb.x ? [pa, pb] : [pb, pa]; const x1 = l.x + 170, y1 = l.y + 12, x2 = r.x, y2 = r.y + 12, mx = (x1 + x2) / 2, span = Math.round(Math.abs(pa.x - pb.x) / colW), bu = span > 1 ? -22 * (span - 1) - 14 : 0; svg += '<path class="n35e" data-a="' + a + '" data-b="' + b + '" d="M' + x1 + ' ' + y1 + ' C' + mx + ' ' + (y1 + bu) + ' ' + mx + ' ' + (y2 + bu) + ' ' + x2 + ' ' + y2 + '"/>'; });
+    shown.forEach((t, ci) => { svg += '<text x="' + (20 + ci * colW) + '" y="22" class="n35cl" fill="' + N35[t].c + '">' + N35[t].l + '</text>'; });
+    pos.forEach((p, k) => { const nm = N35[p.t].name(p.r); svg += '<g class="n35n" data-k="' + k + '" data-t="' + p.t + '" data-id="' + p.r.id + '"><rect x="' + p.x + '" y="' + p.y + '" width="170" height="24" rx="8" fill="' + N35[p.t].c + '" fill-opacity=".14" stroke="' + N35[p.t].c + '"/><text x="' + (p.x + 8) + '" y="' + (p.y + 16) + '">' + esc(nm.length > 24 ? nm.slice(0, 23) + '…' : nm) + '</text></g>'; });
+    svg += '</svg>';
+    body += '<div class="n30chips" style="margin-bottom:8px"><span class="lab">Show:</span>' + types.map(t => '<label class="n30ck"><input type="checkbox" data-n35vis="' + t + '"' + (n35S.hide[t] ? '' : ' checked') + '> ' + N35[t].l + '</label>').join('') + '</div><div class="n35map">' + svg + '</div><p class="lead n30hint">Hover an item to light up its links. Click one to open it.</p>';
+  }
+  return body;
+}
+function n35Page(fid) {
+  const f = fid === '_none' ? { name: 'No story yet' } : n29Folder(fid); if (!f) { state.srFolder = ''; return srHome(); }
+  const dec = state.srTab === 'decisions', nav = dec ? [['list', 'All'], ['char', 'By character'], ['chain', 'Chain']] : [['explore', 'Explore'], ['gaps', 'Loose ends']].concat(innerWidth >= 900 ? [['map', 'Map']] : []), cur = dec ? n35S.dv : n35S.cv;
+  return '<div class="page srm n30page n31page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to stories">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, state.srTab) +
+    '<div class="n30nav">' + nav.map(n => '<button data-n35="view" data-v="' + n[0] + '" class="' + (cur === n[0] ? 'on' : '') + '">' + n[1] + '</button>').join('') + (dec ? '<button class="btn primary n30newb" data-n31="new" data-k="decisions">' + srPlus + ' New decision</button>' : '') + '</div>' + (dec ? n35DecPage(fid) : n35ConnPage(fid)) + '</div>';
+}
+n30Tabs = function (fid, cur) { const T = [['plot', 'Plot'], ['scenes', 'Scenes (' + n30List(fid).length + ')'], ['arcs', 'Arcs'], ['decisions', 'Decisions'], ['connections', 'Connections']]; return '<div class="n30tabs">' + T.map(t => '<button data-n30="tab" data-v="' + t[0] + '" class="' + (cur === t[0] ? 'on' : '') + '">' + t[1] + '</button>').join('') + '<button class="n30tabs-link" data-n33="tochars">Characters of this story &rarr;</button></div>'; };
+{ const _f = n29FolderPage; n29FolderPage = function (fid) { if (state.srArea === 'arch' && (state.srTab === 'decisions' || state.srTab === 'connections')) { const f = fid === '_none' ? true : n29Folder(fid); if (f) return n35Page(fid); } return _f(fid); }; }
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-n35]'); if (!b) return; const a = b.dataset.n35, v = b.dataset.v;
+  if (a === 'view') { if (state.srTab === 'decisions') n35S.dv = v; else n35S.cv = v; srRefresh(); }
+  else if (a === 'open') n35Open(b.dataset.k, v);
+  else if (a === 'sel') { n35S.sel = v; n35S.cv = 'explore'; srRefresh(); const m = $('#main'); if (m) m.scrollTop = 0; }
+});
+document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('.n35n'); if (g) n35Open(g.dataset.t, g.dataset.id); });
+document.addEventListener('mouseover', e => { const g = e.target.closest && e.target.closest('.n35n'); document.querySelectorAll('.n35e.hl').forEach(x => x.classList.remove('hl')); document.querySelectorAll('.n35n.hl').forEach(x => x.classList.remove('hl')); if (!g) return; const k = g.dataset.k; g.classList.add('hl'); document.querySelectorAll('.n35e').forEach(p => { if (p.dataset.a === k || p.dataset.b === k) { p.classList.add('hl'); document.querySelectorAll('.n35n[data-k="' + p.dataset.a + '"],.n35n[data-k="' + p.dataset.b + '"]').forEach(x => x.classList.add('hl')); } }); });
+document.addEventListener('input', e => { if (e.target.id === 'n35q') { n35S.q = e.target.value; clearTimeout(n35S.t); n35S.t = setTimeout(() => { srRefresh(); const q = $('#n35q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 300); } });
+document.addEventListener('change', e => { const t = e.target; if (t.id === 'n35sel') { n35S.sel = t.value; srRefresh(); } else if (t.dataset && t.dataset.n35vis) { n35S.hide[t.dataset.n35vis] = !t.checked; srRefresh(); } });
+{ const st = document.createElement('style'); st.id = 'n35css'; st.textContent = `
+.n35it{display:flex;align-items:center;gap:4px}.n35it .n30open{flex:1}.n35go{margin-right:8px;min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:none;color:#7A3A17;font:600 12.5px inherit;cursor:pointer}
+.n35lab{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;margin:6px 0}.n35lab select{height:42px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--fg);font-size:15px}
+.n35head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;margin:8px 0;border:2px solid;border-radius:14px;background:var(--surface)}.n35head b{flex-basis:100%;font-size:17px}.n35head span{flex:1;opacity:.7;font-size:13px}
+.n35ch{position:relative}.n35ar{position:absolute;left:-14px;top:12px;font-style:normal;opacity:.5}
+.n35map{overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);max-height:70vh}.n35svg{display:block}.n35e{fill:none;stroke:#9a8a78;stroke-opacity:.35;stroke-width:1.4}.n35e.hl{stroke:#7A3A17;stroke-opacity:1;stroke-width:2.4}
+.n35n{cursor:pointer}.n35n text{font:12px sans-serif;fill:var(--fg);pointer-events:none}.n35n.hl rect{fill-opacity:.4}.n35cl{font:700 13px sans-serif}`; document.head.appendChild(st); }
+
+
+/* ===== v36: writing templates + daily goals ===== */
+const N36 = (() => {
+  const P = (t, s) => '<p' + (s ? ' style="' + s + '"' : '') + '>' + t + '</p>';
+  const BR = '<p><br></p>';
+  const sc = (t) => P('<b>' + t + '</b>');
+  const TPL = [
+    { id: 'novel', name: 'Novel', ic: 'openbook', desc: 'Title page, chapter headings, first-line indents and a page break between chapters.', font: 'garamond', title: 'Untitled novel',
+      html: () => '<h1 style="text-align:center">Title of Your Novel</h1>' + P('<i>A novel by Your Name</i>', 'text-align:center') + '<hr class="pb">'
+        + '<h2 style="text-align:center">Chapter One</h2>' + P('Start your first chapter here. Open on a person, a place or a problem.', 'line-height:1.6')
+        + P('Each new paragraph is indented the way a printed book does it.', 'text-indent:1.5em;line-height:1.6') + P('Press Enter and keep going.', 'text-indent:1.5em;line-height:1.6')
+        + '<hr class="pb">' + '<h2 style="text-align:center">Chapter Two</h2>' + P('', 'line-height:1.6').replace('<p style="line-height:1.6"></p>', '<p style="line-height:1.6"><br></p>') },
+    { id: 'story', name: 'Short story', ic: 'feather', desc: 'Manuscript layout: title and byline up top, double-spaced, indented paragraphs.', font: 'tinos', title: 'Untitled short story',
+      html: () => P('<b>Title of Your Story</b>', 'text-align:center') + P('by Your Name', 'text-align:center') + P('About 2,000 words', 'text-align:right')
+        + BR + P('Open your story here. Short stories work best when they start close to the trouble.', 'line-height:2')
+        + P('New paragraphs are indented and double-spaced, the way editors expect to read them.', 'text-indent:1.5em;line-height:2') + P('<br>', 'text-indent:1.5em;line-height:2') },
+    { id: 'screenplay', name: 'Screenplay', ic: 'feather', desc: 'Typewriter font with scene headings, action, character, dialogue and transitions in the right places.', font: 'courierprime', title: 'Untitled screenplay',
+      html: () => P('<b>TITLE OF YOUR SCREENPLAY</b>', 'text-align:center') + P('Written by Your Name', 'text-align:center') + '<hr class="pb">'
+        + sc('INT. COFFEE SHOP - DAY') + P('Rain on the window. MARA (30s, tired but sharp) stirs a cup she has no intention of drinking.', 'margin-bottom:1em')
+        + P('MARA', 'margin-left:9em;margin-bottom:0') + P('(quietly)', 'margin-left:7em;margin-bottom:0') + P('You said you would come alone.', 'margin-left:4em;margin-bottom:1em')
+        + P('JONAH', 'margin-left:9em;margin-bottom:0') + P('I did. Mostly.', 'margin-left:4em;margin-bottom:1em')
+        + P('CUT TO:', 'text-align:right;margin-bottom:1em') + sc('EXT. STREET - CONTINUOUS') + P('<br>') },
+    { id: 'poetry', name: 'Poetry', ic: 'feather', desc: 'Centred title, loose line spacing and stanza breaks that keep your line endings.', font: 'cormorant', title: 'Untitled poem',
+      html: () => '<h2 style="text-align:center">Title of the Poem</h2>' + P('<i>for someone, or no one</i>', 'text-align:center') + BR
+        + P('First line of the first stanza<br>second line, shorter<br>third line leaves room to breathe', 'line-height:1.9;margin-bottom:1.5em;margin-left:2em')
+        + P('A new stanza starts after a blank gap<br>and so the poem moves<br>', 'line-height:1.9;margin-bottom:1.5em;margin-left:2em') }
+  ];
+  return { TPL };
+})();
+function n36TplSheet(pid) {
+  const b = wSheet('Start from a template', '<p>Pick a layout and begin. Everything in it is ordinary text you can change.</p>' + N36.TPL.map(t => `<div class="wcard n36t"><div><b style="font-size:16px">${esc(t.name)}</b><p style="margin:2px 0 0">${esc(t.desc)}</p></div><button class="wb pri" data-n36="use" data-id="${t.id}"${pid ? ' data-project="' + esc(pid) + '"' : ''}>Use</button></div>`).join(''));
+  return b;
+}
+function n36Use(id, pid) {
+  const t = N36.TPL.find(x => x.id === id); if (!t) return;
+  wClose(); newDoc(pid || undefined);
+  const d = state.items[0]; if (!d || !d.draft) return;
+  d.title = t.title; d.html = sanitize(t.html()); d.plain = htmlToText(d.html); d.font = t.font; d.tpl = t.id;
+  const go = () => { if (edDoc !== d) return false; const ed = $('#editor'); if (!ed) return false; ed.innerHTML = d.html; const ti = $('#doc-title'); if (ti) ti.value = d.title; const fs = $('#fontsel'); if (fs) fs.value = t.font; try { fire(); } catch (e) {} const f = fontById(t.font); if (f && ed.style) { ed.style.fontFamily = f.stack; } return true; };
+  let n = 0; const iv = setInterval(() => { if (go() || ++n > 20) clearInterval(iv); }, 100);
+}
+/* daily goal sheet */
+function n36GoalSheet() {
+  const g = WS.goal, t = WS.days[wDay()] || 0, st = wStreak(), on = WS.remOn !== false, tm = WS.remT || '20:00';
+  const wk = [...Array(7)].map((_, i) => { const d = wAgo(6 - i), v = WS.days[wDay(d)] || 0; return `<div class="n36d${v >= g ? ' ok' : ''}${i === 6 ? ' today' : ''}"><i></i>${d.toLocaleDateString([], { weekday: 'short' }).slice(0, 2)}</div>`; }).join('');
+  wSheet('Daily goal', `<div class="wbot">${wBottle(t / g, 'wbg')}<div><b style="font-size:20px">${t.toLocaleString()} / ${g.toLocaleString()}</b><p>${t >= g ? 'Goal reached today.' : (g - t).toLocaleString() + ' words to go.'} ${st.cur}-day streak, best ${st.best}.</p></div></div>
+  <div class="n36wk">${wk}</div>
+  <label>Words per day</label><div class="wrow">${[100, 250, 500, 1000, 2000].map(v => `<button class="wb${v === g ? ' pri' : ''}" data-n36="setgoal" data-v="${v}">${v.toLocaleString()}</button>`).join('')}</div>
+  <label>Or your own<input id="n36g" type="number" min="10" max="20000" step="10" value="${g}"></label>
+  <div class="wrow" style="align-items:center"><label style="flex:1;display:flex;gap:8px;align-items:center"><input id="n36on" type="checkbox"${on ? ' checked' : ''} style="width:20px;height:20px"> Remind me to write</label><input id="n36t" type="time" value="${tm}" aria-label="Reminder time"${on ? '' : ' disabled'}></div>
+  <p>The reminder appears in Ink Haven's notifications and rings once while the app is open. Phone alerts when the app is closed need cloud sync, which comes later.</p>`);
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest && e.target.closest('[data-n36]'); if (!el) return; const a = el.dataset.n36;
+  if (a === 'tpl') n36TplSheet(el.dataset.project);
+  else if (a === 'use') n36Use(el.dataset.id, el.dataset.project);
+  else if (a === 'goal') n36GoalSheet();
+  else if (a === 'setgoal') { WS.goal = +el.dataset.v; wsSave(); n36GoalSheet(); }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'n36g') { WS.goal = Math.max(10, Math.min(20000, parseInt(e.target.value, 10) || 100)); wsSave(); n36GoalSheet(); }
+  else if (e.target.id === 'n36on') { WS.remOn = e.target.checked; wsSave(); n36GoalSheet(); }
+  else if (e.target.id === 'n36t') { WS.remT = e.target.value || '20:00'; wsSave(); toast('Reminder set for ' + WS.remT); }
+});
+/* reminder at the chosen time */
+setInterval(() => {
+  if (WS.remOn === false) return;
+  const now = new Date(), k = wDay(), [h, m] = (WS.remT || '20:00').split(':').map(Number);
+  if (now.getHours() * 60 + now.getMinutes() < h * 60 + m || (WS.days[k] || 0) >= WS.goal) return;
+  const st = wStreak(), left = WS.goal - (WS.days[k] || 0);
+  nfPush('rem', st.cur > 0 ? 'Keep your streak alive' : 'Time to write', (st.cur > 0 ? st.cur + '-day streak. ' : '') + left.toLocaleString() + ' words to reach today\'s goal.', { key: 'dg-' + k, route: 'act:prompt' });
+}, 30000);
+const n36css = document.createElement('style'); n36css.textContent = `.n36t{align-items:center;gap:12px}.n36t .wb{flex:none}.n36wk{display:flex;gap:6px;justify-content:space-between;margin:10px 0}.n36d{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--fg-muted)}.n36d i{width:26px;height:26px;border-radius:50%;border:2px solid var(--line)}.n36d.ok i{background:#2D3A8C;border-color:#2D3A8C}.n36d.today i{box-shadow:0 0 0 2px var(--accent)}`;
+document.head.appendChild(n36css);
 
 document.addEventListener('selectionchange', updateToolbar);
 
