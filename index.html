@@ -1550,13 +1550,13 @@ const fontById = id => FONTS.find(f => f.id === id);
 const fontByName = n => { const k = String(n || '').split(',')[0].replace(/["']/g, '').trim().toLowerCase(); return FONTS.find(f => f.name.toLowerCase() === k || f.stack.split(',')[0].replace(/["']/g, '').trim().toLowerCase() === k); };
 const SIZES = new Set(['x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large']);
 const PAPER_STYLES = [['ruled', 'Ruled exercise book'], ['wide', 'Wide-ruled'], ['narrow', 'Narrow-ruled'], ['blank', 'Blank'], ['dotted', 'Dotted'], ['grid', 'Grid'], ['manuscript', 'Manuscript']];
-const PAPER_DEFAULT = { style: 'ruled', lines: true, sp: 34, th: 1, lc: '', margin: true, mw: 64, mc: '', pad: 100, bg: 'theme', bgc: '#FBF7EF' };
+const PAPER_DEFAULT = { style: 'ruled', lines: true, sp: 34, th: 1, lc: '', margin: true, mw: 64, mc: '', pad: 100, bg: 'theme', bgc: '#FBF7EF', flat: false, sit: true };
 const PAPER_PRESETS = { ruled: { sp: 34, lines: true, margin: true }, wide: { sp: 44, lines: true, margin: true }, narrow: { sp: 26, lines: true, margin: true }, blank: { lines: false, margin: false }, dotted: { sp: 30, lines: true, margin: false }, grid: { sp: 28, lines: true, margin: false }, manuscript: { sp: 52, lines: true, margin: false } };
 const hexOk = v => (/^#[0-9a-f]{6}$/i.test(v || '') ? v : '');
 const clampN = (v, a, b, d) => { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : d; };
 function normPaper(p) {
   p = Object.assign({}, PAPER_DEFAULT, p || {});
-  return { style: PAPER_PRESETS[p.style] ? p.style : 'ruled', lines: !!p.lines, sp: clampN(p.sp, 20, 72, 34), th: [1, 1.5, 2].includes(Number(p.th)) ? Number(p.th) : 1, lc: hexOk(p.lc), margin: !!p.margin, mw: clampN(p.mw, 24, 140, 64), mc: hexOk(p.mc), pad: clampN(p.pad, 50, 200, 100), bg: ['theme', 'white', 'off', 'custom'].includes(p.bg) ? p.bg : 'theme', bgc: hexOk(p.bgc) || '#FBF7EF' };
+  return { style: PAPER_PRESETS[p.style] ? p.style : 'ruled', lines: !!p.lines, sp: clampN(p.sp, 20, 72, 34), th: [1, 1.5, 2].includes(Number(p.th)) ? Number(p.th) : 1, lc: hexOk(p.lc), margin: !!p.margin, mw: clampN(p.mw, 24, 140, 64), mc: hexOk(p.mc), pad: clampN(p.pad, 50, 200, 100), bg: ['theme', 'white', 'off', 'custom'].includes(p.bg) ? p.bg : 'theme', bgc: hexOk(p.bgc) || '#FBF7EF', flat: !!p.flat, sit: p.sit !== false };
 }
 const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'LINK', 'META']);
 function cleanNode(node) {
@@ -1569,11 +1569,13 @@ function cleanNode(node) {
     const ff = ch.tagName === 'SPAN' && ch.style.fontFamily, fs = ch.tagName === 'SPAN' && ch.style.fontSize;
     const T = ch.tagName;
     const src = T === 'IMG' ? (ch.getAttribute('src') || '') : '', alt = T === 'IMG' ? (ch.getAttribute('alt') || '') : '', wd = T === 'IMG' ? ch.style.width : '';
-    const isPb = T === 'HR' && ch.getAttribute('class') === 'pb', fnote = T === 'SUP' ? (ch.getAttribute('data-fn') || '') : '';
+    const isPb = T === 'HR' && ch.getAttribute('class') === 'pb', bkA = /^(P|H1|H2|H3|BLOCKQUOTE|LI|DIV)$/.test(T) ? ch.getAttribute('data-bk') : null, sbA = (T === 'HR' && ch.getAttribute('class') === 'sb') ? { t: ch.getAttribute('data-t'), pn: ch.getAttribute('data-pn'), st: ch.getAttribute('data-st'), f: ch.getAttribute('data-f'), h: ch.getAttribute('data-h') } : null, fnote = T === 'SUP' ? (ch.getAttribute('data-fn') || '') : '';
     const cid = T === 'SPAN' ? (ch.getAttribute('data-cid') || '') : '', ptv = T === 'SPAN' ? parseFloat(ch.getAttribute('data-pt')) : NaN;
     const href = T === 'A' ? (ch.getAttribute('href') || '') : '', cl = T === 'SPAN' ? ch.style.color : '', bgc = T === 'SPAN' ? ch.style.backgroundColor : '';
     [...ch.attributes].forEach(a => ch.removeAttribute(a.name));
     if (isPb) ch.setAttribute('class', 'pb');
+    if (bkA && /^(kn|kt|pb)( (kn|kt|pb))*$/.test(bkA)) ch.setAttribute('data-bk', bkA);
+    if (sbA) { ch.setAttribute('class', 'sb'); ch.setAttribute('data-t', /^(next|cont|odd|even)$/.test(sbA.t) ? sbA.t : 'next'); if (sbA.pn === 'r') ch.setAttribute('data-pn', 'r'); if (/^\d{1,5}$/.test(sbA.st || '')) ch.setAttribute('data-st', sbA.st); if (/^(n|nN|pg|pgN|r|R|a|A)$/.test(sbA.f || '')) ch.setAttribute('data-f', sbA.f); if (sbA.h === '1') ch.setAttribute('data-h', '1'); }
     if (fnote) ch.setAttribute('data-fn', fnote.slice(0, 600));
     if (/^[cn][a-z0-9]{3,14}$/.test(cid)) ch.setAttribute('data-cid', cid);
     if (['left', 'center', 'right', 'justify'].includes(align)) ch.style.textAlign = align;
@@ -2566,7 +2568,7 @@ function htmlToMd(d) {
     if (/^H[1-3]$/.test(t)) return '#'.repeat(+t[1]) + ' ' + inl(c).trim() + '\n\n';
     if (t === 'UL' || t === 'OL') return [...c.children].map((li, i) => (t === 'UL' ? '- ' : (i + 1) + '. ') + inl(li).trim()).join('\n') + '\n\n';
     if (t === 'BLOCKQUOTE') return '> ' + inl(c).trim() + '\n\n';
-    if (t === 'HR') return (c.getAttribute('class') === 'pb' ? '\n---\n\n' : '---\n\n');
+    if (t === 'HR') return (/^(pb|sb)$/.test(c.getAttribute('class') || '') ? '\n---\n\n' : '---\n\n');
     if (t === 'TABLE') { const rows = [...c.querySelectorAll('tr')].map(r => '| ' + [...r.children].map(td => inl(td).trim().replace(/\|/g, '/')).join(' | ') + ' |'); if (rows.length) { const cols = rows[0].split('|').length - 2; rows.splice(1, 0, '|' + ' --- |'.repeat(cols)); } return rows.join('\n') + '\n\n'; }
     if (t === 'P' || t === 'DIV') return inl(c).trim() ? inl(c).trim() + '\n\n' : '';
     return inl(c) ? inl(c).trim() + '\n\n' : '';
@@ -2639,7 +2641,7 @@ async function buildDocx(d) {
     }
     return out;
   }
-  const para = async (node, extra = {}, f = {}) => new D.Paragraph(Object.assign({ children: await runs(node, f), alignment: ALIGN[node.style && node.style.textAlign] }, extra));
+  const para = async (node, extra = {}, f = {}) => new D.Paragraph(Object.assign({ children: await runs(node, f), alignment: ALIGN[node.style && node.style.textAlign] }, n40Ext(node, node.tagName, d), extra));
   async function blocks(node, out) {
     let pend = null;
     const flush = async () => { if (pend && pend.childNodes.length) { const p = await para(pend); out.push(p); } pend = null; };
@@ -2649,13 +2651,14 @@ async function buildDocx(d) {
       if (c.nodeType !== 1) continue;
       await flush();
       const T = c.tagName;
-      if (/^H[1-3]$/.test(T)) out.push(await para(c, { heading: [D.HeadingLevel.HEADING_1, D.HeadingLevel.HEADING_2, D.HeadingLevel.HEADING_3][+T[1] - 1] }));
+      if (/^H[1-3]$/.test(T)) { const o4 = n40Opts(d), ex = { heading: [D.HeadingLevel.HEADING_1, D.HeadingLevel.HEADING_2, D.HeadingLevel.HEADING_3][+T[1] - 1] }; if (o4.chap === T && out.length > 1) { if (o4.chapStart === 'odd') out.push({ __sb: { t: 'odd', pn: '', st: '', f: '', h: '' } }); else ex.pageBreakBefore = true; } out.push(await para(c, ex)); }
       else if (T === 'UL' || T === 'OL') {
         let ref = 'bul';
         if (T === 'OL') { ref = 'num' + (++listN); numbering.push({ reference: ref, levels: [{ level: 0, format: 'decimal', text: '%1.', alignment: D.AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] }); }
         for (const li of c.children) out.push(await para(li, { numbering: { reference: ref, level: 0 } }));
       }
       else if (T === 'BLOCKQUOTE') out.push(await para(c, { indent: { left: 720 } }, { i: true }));
+      else if (T === 'HR' && c.getAttribute('class') === 'sb') out.push({ __sb: { t: c.getAttribute('data-t') || 'next', pn: c.getAttribute('data-pn') || '', st: c.getAttribute('data-st') || '', f: c.getAttribute('data-f') || '', h: c.getAttribute('data-h') || '' } });
       else if (T === 'HR') { if (c.getAttribute('class') === 'pb') out.push(new D.Paragraph({ children: [new D.PageBreak()] })); else out.push(new D.Paragraph({ border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '999999', space: 1 } } })); }
       else if (T === 'TABLE') {
         const rows = [];
@@ -2669,11 +2672,38 @@ async function buildDocx(d) {
   }
   const kids = [new D.Paragraph({ heading: D.HeadingLevel.TITLE, children: [new D.TextRun(titleOf(d))] })];
   await blocks(body, kids);
-  const hf = d.hf || {}, al = ALIGN[hf.align] || D.AlignmentType.CENTER, section = { properties: {}, children: kids };
-  if (hf.head) section.headers = { default: new D.Header({ children: [new D.Paragraph({ alignment: al, children: [new D.TextRun(hf.head)] })] }) };
-  if (hf.foot || hf.num) { const ch = []; if (hf.foot) ch.push(new D.TextRun(hf.foot + (hf.num ? '   ' : ''))); if (hf.num) ch.push(new D.TextRun({ children: ['Page ', D.PageNumber.CURRENT] })); section.footers = { default: new D.Footer({ children: [new D.Paragraph({ alignment: al, children: ch })] }) }; }
-  const doc = new D.Document({ creator: 'Ink Haven', title: titleOf(d), footnotes: notes, numbering: { config: numbering }, styles: { default: { document: { run: { font: defFont, size: 22 } } } }, sections: [section] });
-  return D.Packer.toBlob(doc);
+  const hf = d.hf || {}, al = ALIGN[hf.align] || D.AlignmentType.CENTER, pnS = n39Pn(d), g = d.pgset, tw = x => Math.round((+x || 0) * 1440);
+  const dimIn = n41Base(), land = !!(g && g.orient === 'l');
+  const NF = { n: D.NumberFormat.DECIMAL, nN: D.NumberFormat.DECIMAL, pg: D.NumberFormat.DECIMAL, pgN: D.NumberFormat.DECIMAL, r: D.NumberFormat.LOWER_ROMAN, R: D.NumberFormat.UPPER_ROMAN, a: D.NumberFormat.LOWER_LETTER, A: D.NumberFormat.UPPER_LETTER };
+  const TY = { next: D.SectionType.NEXT_PAGE, cont: D.SectionType.CONTINUOUS, odd: D.SectionType.ODD_PAGE, even: D.SectionType.EVEN_PAGE };
+  const numRuns = f => f === 'nN' ? [D.PageNumber.CURRENT, ' / ', D.PageNumber.TOTAL_PAGES] : f === 'pg' ? ['Page ', D.PageNumber.CURRENT] : f === 'pgN' ? ['Page ', D.PageNumber.CURRENT, ' of ', D.PageNumber.TOTAL_PAGES] : [D.PageNumber.CURRENT];
+  const AL = { l: D.AlignmentType.LEFT, c: D.AlignmentType.CENTER, r: D.AlignmentType.RIGHT };
+  const hfSet = (f, showNum, side) => {
+    const top = [], bot = [], pos = pnS.pos, a = AL[side || pos[1]] || D.AlignmentType.CENTER;
+    if (hf.head) top.push(new D.Paragraph({ alignment: al, children: [new D.TextRun(hf.head)] }));
+    if (hf.foot) bot.push(new D.Paragraph({ alignment: al, children: [new D.TextRun(hf.foot)] }));
+    if (showNum) (pos[0] === 't' ? top : bot).push(new D.Paragraph({ alignment: a, children: [new D.TextRun({ children: numRuns(f) })] }));
+    return { head: new D.Header({ children: top.length ? top : [new D.Paragraph('')] }), foot: new D.Footer({ children: bot.length ? bot : [new D.Paragraph('')] }) };
+  };
+  const parts = []; { let cur = { a: null, k: [] }; kids.forEach(k => { if (k && k.__sb) { parts.push(cur); cur = { a: k.__sb, k: [] }; } else cur.k.push(k); }); parts.push(cur); }
+  let fmt = pnS.fmt;
+  const sections = parts.map((pt, i) => {
+    const a = pt.a; if (a && a.f) fmt = a.f; const hide = a ? a.h === '1' : false, show = pnS.on && !hide;
+    const props = { page: { pageNumbers: Object.assign({ formatType: NF[fmt] || D.NumberFormat.DECIMAL }, (i === 0 && pnS.start !== 1) ? { start: pnS.start } : {}, (a && a.pn === 'r') ? { start: parseInt(a.st, 10) || 1 } : {}) } };
+    if (a) props.type = TY[a.t] || D.SectionType.NEXT_PAGE;
+    if (g || i === 0) { props.page.size = { width: tw(dimIn[0]), height: tw(dimIn[1]), orientation: land ? D.PageOrientation.LANDSCAPE : D.PageOrientation.PORTRAIT }; }
+    if (g) props.page.margin = { top: tw(g.mt), bottom: tw(g.mb), left: tw(g.ml), right: tw(g.mr), gutter: tw(g.gut), header: 500, footer: 500 };
+    const sec = { properties: props, children: pt.k.length ? pt.k : [new D.Paragraph('')] };
+    const odd = hfSet(fmt, show, null);
+    sec.headers = { default: odd.head }; sec.footers = { default: odd.foot };
+    if (pnS.oe) { const ev = hfSet(fmt, show, pnS.pos[1] === 'r' ? 'l' : pnS.pos[1] === 'l' ? 'r' : 'c'); sec.headers.even = ev.head; sec.footers.even = ev.foot; }
+    if (i === 0 && !pnS.first) { const fs = hfSet(fmt, false); props.titlePage = true; sec.headers.first = fs.head; sec.footers.first = fs.foot; }
+    return sec;
+  });
+  const doc = new D.Document({ creator: 'Ink Haven', title: titleOf(d), footnotes: notes, numbering: { config: numbering }, evenAndOddHeaderFooters: !!pnS.oe, styles: { default: { document: { run: { font: defFont, size: 22 } } } }, sections });
+  let blob = await D.Packer.toBlob(doc);
+  if (g && g.mirror) { try { blob = await n41Zip(blob); } catch (e) { toast('Word file saved without mirrored margins'); } }
+  return blob;
 }
 async function exportAs(fmt) {
   if (!edDoc) return;
@@ -3315,32 +3345,45 @@ function v30Paginate() {
   if (state.set.paged === false) { sh.classList.remove('paged'); if (pg) pg.remove(); clear(); sh.style.minHeight = ''; return; }
   if (!pg) { pg = document.createElement('div'); pg.id = 'pgs'; pg.setAttribute('aria-hidden', 'true'); sh.insertBefore(pg, sh.firstChild); }
   sh.classList.add('paged'); clear(); sh.style.minHeight = '';
+  try { n39Apply(); } catch (e) {}
   const sr = sh.getBoundingClientRect(), W = sr.width; if (W < 80) return;
-  const T0 = Math.round(ed.getBoundingClientRect().top - sr.top), PADB = Math.max(30, Math.round(T0 * .7)), GAP = 30;
+  const T0 = Math.round(ed.getBoundingClientRect().top - sr.top), PADB = sh.dataset.mb ? Math.max(14, +sh.dataset.mb) : Math.max(30, Math.round(T0 * .7)), GAP = 30;
   const pl = sh.querySelector('.paper-lines'); let LT = T0; if (pl) { const v = parseFloat(getComputedStyle(pl).top); if (isFinite(v)) LT = v; }
-  const cvh = (ed.closest('.canvas') || {}).clientHeight || (innerHeight - 250), PH = Math.round(Math.min(1500, Math.max(480, W * 1.41, cvh * .94))), C = PH - T0 - PADB;
-  const pages = [{ top: 0, s: T0, e0: T0 + C, max: T0 + C }], writes = [];
+  const cvh = (ed.closest('.canvas') || {}).clientHeight || (innerHeight - 250), PH = sh.dataset.ratio ? Math.round(W * +sh.dataset.ratio) : Math.round(Math.min(1500, Math.max(480, W * 1.41, cvh * .94))), C = PH - T0 - PADB;
+  const pnS = n39Pn(edDoc), mkPage = (top, x) => Object.assign({ top, s: top + T0, e0: top + T0 + C, max: top + T0 + C }, x || {});
+  const pages = [mkPage(0, { num: Math.max(0, parseInt(pnS.start, 10)), fmt: pnS.fmt, hide: false })], writes = [];
+  if (!isFinite(pages[0].num)) pages[0].num = 1;
   const rects = kids.map(b => { const r = b.getBoundingClientRect(); return { t: r.top - sr.top, h: r.height }; });
-  let shift = 0, force = false;
+  const o40 = n40Opts(edDoc), hasBk = (b, t) => (b.getAttribute('data-bk') || '').split(' ').includes(t), knB = b => hasBk(b, 'kn') || (o40.kh && /^H[1-3]$/.test(b.tagName));
+  let shift = 0, force = false, pend = null, pendC = null;
   kids.forEach((b, i) => {
     const r = rects[i], P = pages[pages.length - 1], y = r.t + shift, h = r.h; let push = 0;
     if (r.h < 1 && !b.matches('hr')) return;
-    const first = y <= P.s + 2, fits = y + h <= P.e0 + .18 * C, big = h > .85 * C;
+    let hk = h; for (let j = i; knB(kids[j]) && j + 1 < kids.length && hk < .6 * C; j++) hk += Math.max(0, rects[j + 1].t - rects[j].t - rects[j].h) + rects[j + 1].h;
+    if (i > 0 && hasBk(b, 'pb')) { force = true; pend = null; }
+    if (i > 0 && o40.chap && b.tagName === o40.chap && kids.slice(0, i).some(x => !x.matches('hr'))) { force = true; pend = o40.chapStart === 'odd' ? { syn: 1, dataset: { t: 'odd' } } : null; }
+    const first = y <= P.s + 2, fits = y + hk <= P.e0 + .18 * C, big = h > .85 * C;
     if (i > 0 && (force || (!fits && !first && !(big && y - P.s < .4 * C)))) {
-      const top = Math.max(P.max, P.e0) + PADB + GAP, s = top + T0; push = s - y;
+      let top = Math.max(P.max, P.e0) + PADB + GAP; const sec = (force && pend) || pendC; pendC = null;
+      let num = P.num + 1, fm = P.fmt, hide = P.hide;
+      if (sec && !sec.syn) { if (sec.dataset.pn === 'r') { const st0 = parseInt(sec.dataset.st, 10); num = isNaN(st0) ? 1 : Math.max(0, st0); } if (sec.dataset.f) fm = sec.dataset.f; hide = sec.dataset.h === '1'; }
+      const want = sec ? sec.dataset.t : '';
+      if ((want === 'odd' && num % 2 === 0) || (want === 'even' && num % 2 === 1)) { const bp = mkPage(top, { num, fmt: fm, hide: true, blank: true }); pages.push(bp); top = Math.max(bp.max, bp.e0) + PADB + GAP; num++; }
+      const s = top + T0; push = s - y;
       const cs = getComputedStyle(b), mt = parseFloat(cs.marginTop) || 0, pv = b.previousElementSibling, mb = pv ? (parseFloat(getComputedStyle(pv).marginBottom) || 0) : 0;
-      writes.push([b, Math.max(mb, mt) + push]); shift += push; force = false;
-      pages.push({ top, s, e0: s + C, max: s + C });
+      writes.push([b, Math.max(mb, mt) + push]); shift += push; force = false; pend = null;
+      pages.push(mkPage(top, { num, fmt: fm, hide }));
     }
     const Q = pages[pages.length - 1]; Q.max = Math.max(Q.max, y + push + h);
-    if (b.matches('hr.pb')) force = true;
+    if (b.matches('hr.pb')) { force = true; pend = null; } else if (b.matches('hr.sb')) { if ((b.dataset.t || 'next') === 'cont') pendC = b; else { force = true; pend = b; } }
   });
   writes.forEach(([b, m]) => { b.style.marginTop = m + 'px'; });
   const n = pages.length, last = pages[n - 1], lastBottom = Math.max(last.top + PH, last.max + PADB);
-  const sig = pages.map((p, k) => p.top + ':' + (k < n - 1 ? Math.max(p.e0, p.max) + PADB : lastBottom)).join('|') + '/' + LT;
+  const labs = pages.map((p, k) => (!pnS.on || p.hide || p.blank || (k === 0 && !pnS.first)) ? '' : n39Label(p.num, p.fmt, n));
+  const sig = pages.map((p, k) => p.top + ':' + (k < n - 1 ? Math.max(p.e0, p.max) + PADB : lastBottom) + ':' + labs[k] + (p.blank ? 'b' : '') + n39Pos(pnS, p.num)).join('|') + '/' + LT + (sh.dataset.guides || '');
   if (pg.dataset.sig !== sig) {
     pg.dataset.sig = sig;
-    pg.innerHTML = pages.map((p, k) => { const bot = k < n - 1 ? Math.max(p.e0, p.max) + PADB : lastBottom; return `<div class="pg" style="top:${p.top}px;height:${bot - p.top}px;--p-lt:${LT}px"><div class="pl"></div><span class="pn">${k + 1}${n > 1 ? ' / ' + n : ''}</span></div>`; }).join('');
+    pg.innerHTML = pages.map((p, k) => { const bot = k < n - 1 ? Math.max(p.e0, p.max) + PADB : lastBottom; return `<div class="pg" style="top:${p.top}px;height:${bot - p.top}px;--p-lt:${LT}px"><div class="pl"></div>${sh.dataset.guides === '1' ? '<i class="n41g"></i>' : ''}${labs[k] ? `<span class="pn ${n39Pos(pnS, p.num)}">${labs[k]}</span>` : ''}${p.blank ? '<span class="n39bl">Blank page, left empty so the next section starts on the right page</span>' : ''}</div>`; }).join('');
   }
   sh.style.minHeight = Math.ceil(lastBottom + 24) + 'px';
 }
@@ -4753,32 +4796,30 @@ document.addEventListener('click', e => { if (e.target.closest && e.target.close
 document.addEventListener('input', e => { if (e.target.id === 'ppen') { state.set.penName = e.target.value.slice(0, 30); saveSettings(); } });
 document.addEventListener('click', e => { const el = e.target.closest && e.target.closest('[data-t35="profile"]'); if (el) pProfileSheet(); });
 const pStyle = document.createElement('style'); pStyle.textContent = `.pprof{display:flex;gap:14px;align-items:center;margin-bottom:12px}.sr-brow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;margin:4px 0;border:1px solid #E4D0B4;border-radius:12px;background:#FFFAF0;color:inherit;font:inherit;cursor:pointer}.sr-brow span{display:flex;flex-direction:column;min-width:0}.sr-brow i{font-size:12px;opacity:.7;font-style:normal}.sr-back{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;background:transparent;color:#7A3A1A;font:600 14px/1 system-ui,sans-serif;padding:6px 2px;margin-bottom:4px;cursor:pointer}.sr-st{font-size:11px;font-style:normal;opacity:.7;margin-left:6px;font-weight:400}.hd-btns{gap:6px}.hd-btns .icon-btn.round{width:40px;height:40px;min-width:40px}.home-brand{min-width:0;flex:1 1 auto}.home-brand .hd-t{min-width:0}.hd .logo{width:clamp(44px,13vw,60px)!important;height:auto!important;flex:none}.hd .hd-div{margin-inline:2px!important}.app:not(.is-editor) .hd-t b{font-size:clamp(19px,5.6vw,26px)!important}.app:not(.is-editor) .hd-t i{font-size:clamp(10px,2.9vw,13px)!important}.pfbtn{padding:0;overflow:hidden;border:0;background:transparent;display:grid;place-items:center}.pfbtn svg{display:block}.pav{width:58px;height:58px;border-radius:50%;flex:none;overflow:hidden;box-shadow:0 2px 6px rgba(74,36,16,.3)}.pacc{flex:1}.pacc2{display:grid;grid-template-columns:1fr;gap:8px}.pstm{display:flex;gap:8px;margin:6px 0}.pst{flex:1;border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;background:var(--surface)}.pst b{font-size:20px}.pst span{font-size:12px;color:var(--fg-muted)}.pchars{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px}.pch{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;text-decoration:none;color:inherit;font-size:12px}.pol{display:block;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:4px 0;text-decoration:none;color:inherit;font-size:14px}.plab{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--fg-muted)}.plab input{height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:16px;background:var(--surface);color:var(--fg)}.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.pgrid div{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;background:var(--surface)}.pgrid b{font-size:22px}.pgrid span{font-size:12px;color:var(--fg-muted)}.ph3{margin:14px 0 2px;font-size:16px}.pawds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.pawd{border:1px dashed var(--line);border-radius:12px;padding:8px 4px;text-align:center;opacity:.45}.pawd b{display:block;font-size:17px}.pawd span{font-size:11px}.pawd.on{opacity:1;border:1px solid #B98F55;background:linear-gradient(180deg,#FFF8EA,#F6E6C8);color:#5C2A12}
-.sheet[data-patt]:not(.paged) .paper-lines{top:calc(var(--pt) + var(--hfh,0px) - var(--lsh,0px))}#pgs .pl{top:calc(var(--p-lt,0px) - var(--lsh,0px))}`; document.head.appendChild(pStyle);
+.sheet[data-patt]:not(.paged) .paper-lines{top:calc(var(--pt) + var(--hfh,0px) - var(--lsh,0px))}.sheet #pgs .pl{top:calc(var(--p-lt,0px) - var(--lsh,0px))}`; document.head.appendChild(pStyle);
 /* put the baseline of the text on each ruled line */
 function pBaseline() {
-  const ed = $('#editor'), sh = ed && ed.closest('.sheet'); if (!sh) return;
+  const ed = $('#editor'), sh = ed && ed.closest('.sheet'); if (!sh || document.hidden) return;
   const st = sh.dataset.style, ok = sh.dataset.patt && /^(ruled|wide|narrow|manuscript|grid)$/.test(st || '');
-  if (!ok) { if (sh.style.getPropertyValue('--lsh')) sh.style.removeProperty('--lsh'); return; }
-  let fe = ed; const w0 = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.nodeValue || '').trim() ? 1 : 3 }).nextNode(); if (w0 && w0.parentElement) fe = w0.parentElement;
-  const cs = getComputedStyle(fe), sig = cs.fontWeight + cs.fontStyle + (document.fonts ? document.fonts.status + document.fonts.size : '') + cs.fontFamily + cs.fontSize + (sh.style.getPropertyValue('--ln') || '') + (sh.style.getPropertyValue('--z') || '') + getComputedStyle(sh).getPropertyValue('--ln');
-  const le = sh.querySelector('#pgs .pl') || sh.querySelector('.paper-lines');
-  const sig2 = sig + (le ? le.parentNode.id + le.className : '');
-  if (sh._psig === sig2) return; sh._psig = sig2;
-  const pr = document.createElement('div'); pr.className = 'writing'; pr.setAttribute('aria-hidden', 'true');
-  const eds = getComputedStyle(ed);
-  pr.style.cssText = 'position:absolute;top:0;visibility:hidden;pointer-events:none;min-height:0;left:' + (ed.offsetLeft) + 'px;width:' + ed.clientWidth + 'px;font-family:' + eds.fontFamily + ';font-size:' + eds.fontSize + ';font-weight:' + eds.fontWeight;
-  let blk = null; for (const k of ed.children) { if ((k.textContent || '').trim()) { blk = k; break; } }
-  const mk = '<i style="display:inline-block;width:0;height:0"></i>';
-  if (blk) { const cl = blk.cloneNode(true); cl.removeAttribute('id'); cl.style.marginTop = '0'; const tw = document.createTreeWalker(cl, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.nodeValue || '').trim() ? 1 : 3 }).nextNode(); const m = document.createElement('i'); m.style.cssText = 'display:inline-block;width:0;height:0'; if (tw) tw.parentNode.insertBefore(m, tw); else cl.appendChild(m); pr.appendChild(cl); }
-  else { pr.innerHTML = '<p style="margin:0">Hg' + mk + '</p>'; }
-  pr.insertAdjacentHTML('beforeend', '<div style="height:calc(var(--ln) * var(--z,1))"></div><div style="height:var(--lt)"></div>');
-  sh.appendChild(pr); const p = pr.children[0], i = p.querySelector('i'), nk = pr.children.length;
-  const base = i.getBoundingClientRect().bottom - p.getBoundingClientRect().top, ln = pr.children[nk - 2].getBoundingClientRect().height, lt = pr.children[nk - 1].getBoundingClientRect().height;
-  pr.remove(); if (!ln || !le) return;
-  sh.style.setProperty('--lsh', '0px'); const O = le.getBoundingClientRect().top - ed.getBoundingClientRect().top;
-  const s = Math.max(-ln / 2, Math.min(ln / 2, O + ln - lt - base)); sh.style.setProperty('--lsh', s.toFixed(1) + 'px');
+  if (!ok || sh.dataset.sit === '0') { if (sh.style.getPropertyValue('--lsh')) sh.style.removeProperty('--lsh'); return; }
+  const tw = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.nodeValue || '').replace(/\u200b/g, '').trim() ? 1 : 3 }); const tn = tw.nextNode(); if (!tn || !tn.parentElement) return;
+  const le = sh.querySelector('#pgs .pl') || sh.querySelector('.paper-lines'); if (!le) return;
+  const cs = getComputedStyle(tn.parentElement);
+  let asc; try { const cx = (pBaseline.cv = pBaseline.cv || document.createElement('canvas')).getContext('2d'); cx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily; const m = cx.measureText('Hg'); asc = m.fontBoundingBoxAscent; } catch (e) {}
+  if (!(asc > 0)) return;
+  const r = document.createRange(); r.setStart(tn, 0); r.setEnd(tn, 1); const rc = r.getClientRects()[0]; if (!rc || !rc.height) return;
+  const base = rc.top + asc;
+  const lcs = getComputedStyle(le), ln = parseFloat((lcs.backgroundSize || '').split(' ').pop()) || 0, lt = parseFloat(sh.style.getPropertyValue('--lt')) || 1; if (!ln) return;
+  const ruleTop = le.getBoundingClientRect().top + ln - lt;
+  let d = ((ruleTop - base) % ln + ln) % ln; if (d > ln / 2) d -= ln;
+  if (Math.abs(d) < 0.4) return;
+  let cur = parseFloat(sh.style.getPropertyValue('--lsh')) || 0, nx = cur + d; nx = ((nx % ln) + ln) % ln; if (nx > ln / 2) nx -= ln;
+  sh.style.setProperty('--lsh', nx.toFixed(1) + 'px');
 }
 setInterval(pBaseline, 500);
+const flatCss = document.createElement('style'); flatCss.textContent = `.sheet[data-flat="1"]{border-radius:0!important;border:0!important;box-shadow:0 1px 3px rgba(60,64,67,.3)!important;background-image:none!important}.sheet[data-flat="1"]::before,.sheet[data-flat="1"]::after{background-image:none}.sheet[data-flat="1"] #pgs .pg{border-radius:0!important;border:0!important;background-image:none!important;box-shadow:0 1px 3px rgba(60,64,67,.3)!important}.editor[data-flat="1"] .canvas{background:color-mix(in srgb,var(--fg) 6%,var(--surface))!important}.editor[data-flat="1"]{background-image:none!important}`;
+document.head.appendChild(flatCss);
+
 if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => { const sh = $('.sheet'); if (sh) sh._psig = ''; });
 
 
@@ -4799,14 +4840,14 @@ function mMenus() {
       E('Find and replace…', I('find'), { ed: 'pop', v: 'find' }), E('Add a comment', I('comment'), { ed: 'pop', v: 'cmnew' }), E('Add a note (private)', I('comment'), { ed: 'pop', v: 'ntnew' }), E('Clear formatting', I('clearfmt'), { ed: 'clearfmt' })],
     View: [E('Edit mode', I('pen'), { ed: 'mode', v: 'edit' }), E('Read mode', I('eye'), { ed: 'mode', v: 'read' }), E('Full screen (paper only)', I('expand'), { ed: 'mode', v: 'fs' }), E('Expanded view (whole screen)', I('expand'), null, { sc: 'F11', f: () => n29Expand() }), 0,
       E('Show or hide the toolbar', I('toolbar'), { ed: 'tb-toggle' }), E('Zoom in', I('plus'), { zoom: '+' }), E('Zoom out', I('minus'), { zoom: '-' }), E('Reset zoom to 100%', G('100'), { zoom: '0' })],
-    Insert: [E('Picture…', I('image'), { ed: 'img-pick' }), E('Link…', I('link'), { ed: 'pop', v: 'link' }, { sc: 'Ctrl+K' }), E('Table…', I('table'), { ed: 'pop', v: 'table' }), E('Shape…', I('shapes'), { ed: 'pop', v: 'shapes' }), 0,
+    Insert: [E('Line break (same paragraph)', I('pagebreak'), null, { sc: 'Shift+Enter', f: () => n40Soft() }), E('Non-breaking space', I('pagebreak'), null, { sc: 'Ctrl+Shift+Space', f: () => n40Nbsp() }), E('Picture…', I('image'), { ed: 'img-pick' }), E('Link…', I('link'), { ed: 'pop', v: 'link' }, { sc: 'Ctrl+K' }), E('Table…', I('table'), { ed: 'pop', v: 'table' }), E('Shape…', I('shapes'), { ed: 'pop', v: 'shapes' }), 0,
       E('Divider line', I('hr'), { ed: 'hr' }), E('Page break', I('pagebreak'), { ed: 'pagebreak' }), E('Footnote…', I('footnote'), { ed: 'pop', v: 'fn' }), E('Header and footer…', I('headfoot'), { ed: 'pop', v: 'hf' }), E('Symbols…', I('symbols'), { ed: 'pop', v: 'symbols' }), 0,
       E('Comment', I('comment'), { ed: 'pop', v: 'cmnew' }), E('Note (private)', I('comment'), { ed: 'pop', v: 'ntnew' }), E('Edit picture…', I('image'), { ed: 'pop', v: 'imgtools' })],
     Format: [E('Text', I('bold'), null, { sub: [E('Bold', I('bold'), { cmd: 'bold' }, { sc: 'Ctrl+B' }), E('Italic', I('italic'), { cmd: 'italic' }, { sc: 'Ctrl+I' }), E('Underline', I('underline'), { cmd: 'underline' }, { sc: 'Ctrl+U' }), E('Strikethrough', I('strike'), { cmd: 'strikeThrough' }), E('Subscript', G('x<sub>2</sub>'), { cmd: 'subscript' }), E('Superscript', G('x<sup>2</sup>'), { cmd: 'superscript' })] }),
       E('Font…', G('T'), { ed: 'pop', v: 'fontlist' }), E('Size…', G('Aa'), { ed: 'pop', v: 'sizelist' }), E('Text colour…', I('textcolor'), { ed: 'pop', v: 'fore' }), E('Highlight…', I('highlight'), { ed: 'pop', v: 'back' }), E('Paragraph style…', G('&para;'), { ed: 'pop', v: 'stylelist' }), E('Paragraph and indents…', G('&#8633;'), { ed: 'pop', v: 'para' }), 0,
       E('Align', I('left'), null, { sub: [E('Left', I('left'), { cmd: 'justifyLeft' }), E('Centre', I('center'), { cmd: 'justifyCenter' }), E('Right', I('right'), { cmd: 'justifyRight' }), E('Justify', I('justify'), { cmd: 'justifyFull' })] }),
       E('Lists and quote', I('ul'), null, { sub: [E('Bullets', I('ul'), { cmd: 'insertUnorderedList' }), E('Numbers', I('ol'), { cmd: 'insertOrderedList' }), E('Quote', G('&ldquo;'), { cmd: 'quote' })] }), 0, E('Clear formatting', I('clearfmt'), { ed: 'clearfmt' })],
-    Page: [E('Paper settings…', I('paper'), { action: 'paper' }), E('Pages instead of one long scroll', W('pages'), { ed: 'toggle', v: 'paged' }), E('Page wall or spread', W('pages'), { w34: 'pages' }), 0,
+    Page: [E('Page setup (margins, numbers, sections)…', I('paper'), null, { f: () => n39Setup() }), E('Paragraph and chapter breaks…', I('pagebreak'), null, { f: () => n40Sheet() }), E('Section break', I('pagebreak'), null, { sub: [E('Next page', I('pagebreak'), null, { f: () => n39InsertSb('next') }), E('Continuous', I('pagebreak'), null, { f: () => n39InsertSb('cont') }), E('Odd page', I('pagebreak'), null, { f: () => n39InsertSb('odd') }), E('Even page', I('pagebreak'), null, { f: () => n39InsertSb('even') })] }), 0, E('Paper settings…', I('paper'), { action: 'paper' }), E('Pages instead of one long scroll', W('pages'), { ed: 'toggle', v: 'paged' }), E('Page wall or spread', W('pages'), { w34: 'pages' }), 0,
       E('Page break', I('pagebreak'), { ed: 'pagebreak' }), E('Header and footer…', I('headfoot'), { ed: 'pop', v: 'hf' }), E('Footnote…', I('footnote'), { ed: 'pop', v: 'fn' })],
     Writing: [E('Chapters panel', I('list'), { w34: 'chap' }), E('Focus mode', W('focus'), { w34: 'focus' }), E('Typewriter mode', W('type'), { w34: 'tw' }, { chk: () => mOn('tw') }), E('Typewriter keys', W('type'), { w34: 'tkb' }, { chk: () => mOn('tkb') }), E('Key click sound', W('click'), { w34: 'click' }, { chk: () => wClickOn() }), 0,
       E('Character tracker', W('track'), { w34: 'track' }), E('Writing statistics', W('stats'), { w34: 'stats' }), E('Writing sprint', W('sprint'), { w34: 'sprint' }), E('Daily prompt', W('prompt'), { w34: 'prompt' }), E('Snapshots', W('snap'), { w34: 'snap' }), E('Manuscript export…', W('manu'), { w34: 'manu' }), 0,
@@ -4969,16 +5010,7 @@ const N29_SIZES = {
   legal: { n: 'Legal', css: 'legal', m: '1in' }, b6: { n: 'Book 6 x 9 in', css: '6in 9in', m: '0.8in' }, trade: { n: 'Paperback 5 x 8 in', css: '5in 8in', m: '0.7in' }
 };
 const n29Close = '<button class="icon-btn" data-ed="pop-close" aria-label="Close">' + icon('close') + '</button>';
-function n29Pdf() {
-  if (!edDoc) return; flushSave();
-  const sz = N29_SIZES[state.set.pgsize] || N29_SIZES.a4;
-  let html = buildHtmlPage(edDoc);
-  html = html.replace('</head>', '<style>@page{size:' + sz.css + ';margin:' + sz.m + '}html,body{background:#fff}body{max-width:none!important;margin:0!important;padding:0!important;font-size:12pt!important;line-height:1.6!important}h1,h2,h3{break-after:avoid}p{orphans:2;widows:2}img{max-width:100%;break-inside:avoid}</style></head>');
-  const f = document.createElement('iframe'); f.id = 'n29pdf'; f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';
-  f.onload = () => { setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { toast('Could not open the print window'); } setTimeout(() => f.remove(), 120000); }, 500); };
-  f.srcdoc = html; document.body.appendChild(f);
-  toast('In the window that opens, choose Save as PDF');
-}
+
 function n29Expand() {
   const d = document, el = d.documentElement;
   try {
@@ -5924,6 +5956,404 @@ setInterval(() => {
 const n36css = document.createElement('style'); n36css.textContent = `.n36t{align-items:center;gap:12px}.n36t .wb{flex:none}.n36wk{display:flex;gap:6px;justify-content:space-between;margin:10px 0}.n36d{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--fg-muted)}.n36d i{width:26px;height:26px;border-radius:50%;border:2px solid var(--line)}.n36d.ok i{background:#2D3A8C;border-color:#2D3A8C}.n36d.today i{box-shadow:0 0 0 2px var(--accent)}`;
 document.head.appendChild(n36css);
 
+
+/* ===== v38: Story analysis (no AI): growth curves, scene tension, consistency checks, text pacing ===== */
+const N38 = state.n38 = state.n38 || { v: 'char', c: '' };
+const N38_POS = new Set('good great love loved happy joy joyful hope hopeful smile smiled laugh laughed warm safe peace calm proud brave trust trusted kind free win won light bright beautiful gentle comfort relief wonderful grateful embrace forgive forgave alive strong success celebrate delight cheerful'.split(' '));
+const N38_NEG = new Set('bad fear feared afraid angry anger hate hated sad cry cried tears pain hurt dark death dead die died kill killed blood fire burn burned cold lost loss alone lonely scream screamed panic dread fail failed broke broken shame guilty guilt betray betrayed rage danger war fight fought weep grief darkness worry worried terror horror regret cruel'.split(' '));
+const N38_CRUTCH = ['just', 'very', 'really', 'suddenly', 'quite', 'almost', 'seemed', 'felt', 'began', 'started', 'rather', 'somehow', 'actually', 'simply', 'finally'];
+const N38_DW = { Major: 3, Irreversible: 4, Moral: 3, Strategic: 2, Emotional: 2, Minor: 1 };
+const n38W = t => (t.toLowerCase().match(/[\p{L}']+/gu) || []);
+const n38Tone = t => { const w = n38W(t); if (!w.length) return 0; let p = 0, n = 0; w.forEach(x => { if (N38_POS.has(x)) p++; else if (N38_NEG.has(x)) n++; }); return (p - n) / w.length * 100; };
+const n38Sent = t => t.split(/(?<=[.!?…])\s+/).map(s => s.trim()).filter(Boolean);
+const n38Syl = w => { w = w.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; const m = w.replace(/e$/, '').match(/[aeiouy]+/g); return Math.max(1, m ? m.length : 1); };
+function n38Lev(a, b) { const m = a.length, n = b.length; if (Math.abs(m - n) > 2) return 9; let p = Array.from({ length: n + 1 }, (_, j) => j); for (let i = 1; i <= m; i++) { const c = [i]; for (let j = 1; j <= n; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); p = c; } return p[n]; }
+function n38Doc(fid) { const f = fid === '_none' ? null : n29Folder(fid); return f && f.docId ? state.items.find(d => d.id === f.docId && d.kind === 'doc' && !d.deletedAt) : null; }
+function n38Chapters(doc) {
+  if (!doc) return [];
+  const dom = new DOMParser().parseFromString('<body>' + (doc.html || ''), 'text/html'), out = []; let cur = null;
+  [...dom.body.children].forEach(b => {
+    const t = (b.textContent || '').replace(/​/g, '').trim(); if (!t) return;
+    if (/^(H1|H2)$/.test(b.tagName) || (t.length < 60 && /^(chapter|part|prologue|epilogue)\b/i.test(t))) { cur = { title: t, text: '' }; out.push(cur); return; }
+    if (!cur) { cur = { title: 'Opening', text: '' }; out.push(cur); } cur.text += t + '\n\n';
+  });
+  const ch = out.filter(c => n38W(c.text).length > 30);
+  if (ch.length >= 2) return ch;
+  const all = out.map(c => c.text).join(''), paras = all.split(/\n\n+/).filter(Boolean), segs = []; let acc = '', wc = 0;
+  paras.forEach(p => { acc += p + '\n\n'; wc += n38W(p).length; if (wc >= 1200) { segs.push({ title: 'Part ' + (segs.length + 1), text: acc }); acc = ''; wc = 0; } });
+  if (acc.trim()) { if (segs.length && wc < 400) segs[segs.length - 1].text += acc; else segs.push({ title: 'Part ' + (segs.length + 1), text: acc }); }
+  return segs;
+}
+function n38Data(fid) {
+  const scenes = n30List(fid), idx = new Map(scenes.map((s, i) => [s.id, i]));
+  const doc = n38Doc(fid), chapters = n38Chapters(doc);
+  return { fid, scenes, idx, chars: n30Chars(fid).filter(c => !c.archived), arcs: n31L('arcs', fid), decisions: n31L('decisions', fid), events: n31L('events', fid), plots: n31L('plots', fid), conflicts: n31L('conflicts', fid), doc, chapters, words: chapters.reduce((a, c) => a + n38W(c.text).length, 0) };
+}
+const n38Pres = (s, c) => s.pov === c.id || (s.chars || []).includes(c.id);
+function n38Growth(d, c) {
+  const N = d.scenes.length, inc = Array(N).fill(0), pres = d.scenes.map(s => n38Pres(s, c)), mk = [];
+  d.scenes.forEach((s, i) => { if (pres[i]) { if ((s.conflict || '').trim()) inc[i] += 1; if ((s.outcome || '').trim()) inc[i] += .5; } });
+  d.arcs.filter(a => a.char === c.id).forEach(a => (a.stages || []).forEach((st, k) => { const i = st.scene ? d.idx.get(st.scene) : undefined; if (i != null) { inc[i] += 3; mk.push({ i, t: 'stage', label: st.t || 'Stage ' + (k + 1) }); } }));
+  d.decisions.filter(x => x.char === c.id).forEach(x => { const w = N38_DW[x.type] || 1.5; (x.scenes || []).forEach(sid => { const i = d.idx.get(sid); if (i != null) { inc[i] += w; mk.push({ i, t: 'decision', label: x.title || 'Decision' }); } }); });
+  d.events.filter(e => (e.chars || []).includes(c.id)).forEach(e => (e.scenes || []).forEach(sid => { const i = d.idx.get(sid); if (i != null) inc[i] += 1; }));
+  let run = 0; const cum = inc.map(v => (run += v)); const tot = run;
+  return { inc, pres, mk, tot, cum: cum.map(v => tot ? v / tot * 100 : 0) };
+}
+function n38Chart(bars, line, marks, opt) {
+  opt = opt || {}; const W = 320, H = opt.h || 130, L = 8, R = 8, T = 10, B = 18, n = Math.max(bars ? bars.length : 0, line ? line.length : 0, 1), pw = W - L - R, ph = H - T - B;
+  const X = i => L + (n === 1 ? pw / 2 : i * pw / (n - 1)), Y = v => T + ph - Math.max(0, Math.min(100, v)) / 100 * ph;
+  let s = '<svg class="n38svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opt.label || 'Chart') + '">';
+  [0, 50, 100].forEach(g => { s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(g) + '" y2="' + Y(g) + '" class="n38grid"/>'; });
+  if (opt.mid != null) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(opt.mid) + '" y2="' + Y(opt.mid) + '" class="n38mid"/>';
+  if (bars) { const bw = Math.max(2, Math.min(18, pw / n * .7)); const mx = Math.max(1e-9, ...bars); bars.forEach((v, i) => { if (v > 0) s += '<rect x="' + (X(i) - bw / 2).toFixed(1) + '" y="' + Y(v / mx * 100).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (T + ph - Y(v / mx * 100)).toFixed(1) + '" class="n38bar"/>'; }); }
+  if (line) { let seg = []; const flush = () => { if (seg.length > 1) s += '<polyline class="n38line" points="' + seg.join(' ') + '"/>'; else if (seg.length === 1) s += '<circle class="n38dot" cx="' + seg[0].split(',')[0] + '" cy="' + seg[0].split(',')[1] + '" r="3"/>'; seg = []; }; line.forEach((v, i) => { if (v == null) { flush(); return; } seg.push(X(i).toFixed(1) + ',' + Y(v).toFixed(1)); }); flush(); }
+  (marks || []).forEach(m => { const v = line && line[m.i] != null ? line[m.i] : 0, x = X(m.i), y = Y(v); s += m.t === 'stage' ? '<path class="n38st" d="M' + x + ' ' + (y - 6) + 'l5 6l-5 6l-5 -6z"><title>' + esc(m.label) + '</title></path>' : '<circle class="n38dc" cx="' + x + '" cy="' + y + '" r="4"><title>' + esc(m.label) + '</title></circle>'; });
+  s += '<text x="' + L + '" y="' + (H - 4) + '" class="n38ax">' + esc(opt.l || 'Start') + '</text><text x="' + (W - R) + '" y="' + (H - 4) + '" text-anchor="end" class="n38ax">' + esc(opt.r || 'End') + '</text></svg>';
+  return s;
+}
+function n38CharPick(d) { if (!d.chars.length) return null; let c = d.chars.find(x => x.id === N38.c); if (!c) { c = d.chars.map(x => ({ x, n: d.scenes.filter(s => n38Pres(s, x)).length })).sort((a, b) => b.n - a.n)[0].x; N38.c = c.id; } return c; }
+function n38Names(c) { return [c.name, c.surname].map(x => (x || '').trim()).filter(x => x.length >= 3); }
+function n38Count(text, names) { let n = 0; names.forEach(nm => { const m = text.match(new RegExp('(?<![\\p{L}])' + nm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\p{L}])', 'gu')); if (m) n += m.length; }); return n; }
+function n38CharView(d) {
+  const c = n38CharPick(d); if (!c) return '<p class="lead">Add characters to this story first. Then pick one here to see their growth curve.</p>';
+  const g = n38Growth(d, c), N = d.scenes.length, nm = n29Full(c) || 'this character';
+  const sel = '<label class="n38pick">Character<select data-n38="char" aria-label="Character">' + d.chars.map(x => '<option value="' + x.id + '"' + (x.id === c.id ? ' selected' : '') + '>' + esc(n29Full(x) || 'Unnamed') + '</option>').join('') + '</select></label>';
+  let h = sel;
+  const notes = [];
+  if (!N) h += '<p class="lead">This story has no scenes yet, so there is nothing to plot. Add scenes, then link arc stages and decisions to them.</p>';
+  else if (!g.tot) h += '<p class="lead">' + esc(nm) + ' has no recorded change yet. Link their arc stages and decisions to scenes, and fill in conflict and outcome on the scenes they are in.</p>';
+  else {
+    h += '<div class="n38card"><b>Growth curve</b><p class="n38sub">How much ' + esc(nm) + ' has been changed or tested, scene by scene. Bars are each scene; the line adds them up. ◆ arc stage, ● decision.</p>' + n38Chart(g.inc, g.cum, g.mk, { label: 'Growth curve for ' + nm, l: 'Scene 1', r: 'Scene ' + N }) + '</div>';
+  }
+  if (N) {
+    const idxs = g.pres.map((p, i) => p ? i : -1).filter(i => i >= 0);
+    h += '<div class="n38kv"><div><b>' + idxs.length + '</b><span>of ' + N + ' scenes</span></div><div><b>' + g.mk.filter(m => m.t === 'stage').length + '</b><span>arc stages</span></div><div><b>' + g.mk.filter(m => m.t === 'decision').length + '</b><span>decisions</span></div></div>';
+    if (!idxs.length) notes.push(['note', nm + ' is not in any scene yet.']);
+    else {
+      let gap = 0, gs = 0, run = 0, st = 0; for (let i = idxs[0]; i <= N - 1; i++) { if (g.pres[i]) run = 0; else { if (!run) st = i; run++; if (run > gap) { gap = run; gs = st; } } }
+      if (gap >= Math.max(5, N * .25)) notes.push(['note', nm + ' disappears for ' + gap + ' scenes in a row (from scene ' + (gs + 1) + '). Intentional?']);
+      if (idxs[0] > N * .4) notes.push(['note', nm + ' first appears in scene ' + (idxs[0] + 1) + ' of ' + N + '. That is late.']);
+      if (g.tot && idxs.length >= 6) { let still = 0, best = 0, bs = 0, s0 = 0; for (let i = 0; i < N; i++) { if (g.inc[i] === 0 && g.pres[i]) { if (!still) s0 = i; still++; if (still > best) { best = still; bs = s0; } } else if (g.inc[i] > 0) still = 0; } if (best >= 5) notes.push(['check', nm + ' appears in ' + best + ' scenes in a row (from scene ' + (bs + 1) + ') with no conflict, outcome, decision or arc stage. Their growth stalls there.']); }
+      const first = g.cum.findIndex(v => v > 0); if (g.tot && first > N * .5) notes.push(['note', 'Nothing starts to change for ' + nm + ' until scene ' + (first + 1) + ' of ' + N + '.']);
+    }
+    const arcs = d.arcs.filter(a => a.char === c.id);
+    if (!arcs.length) notes.push(['note', nm + ' has no arc. Fine for a minor character, but worth a look if they matter.']);
+    arcs.forEach(a => {
+      const ttl = a.title || 'their arc', flat = /flat/i.test(a.type || ''), stg = (a.stages || []).length;
+      if (!flat && stg < 2) notes.push(['check', '“' + ttl + '” is a ' + (a.type || 'change') + ' arc but has ' + stg + ' stage(s). A change needs at least a few steps.']);
+      if (flat && stg > 3) notes.push(['note', '“' + ttl + '” is marked flat but has ' + stg + ' stages of change.']);
+      const sa = new Set(n38W(a.start || '')), sb = new Set(n38W(a.end || '')); if (sa.size > 3 && sb.size > 3 && !flat) { let i = 0; sa.forEach(x => { if (sb.has(x)) i++; }); if (i / (sa.size + sb.size - i) > .75) notes.push(['check', '“' + ttl + '”: the starting and ending points read almost the same. Where is the change?']); }
+      if (!(a.start || '').trim() || !(a.end || '').trim()) notes.push(['note', '“' + ttl + '” is missing its ' + (!(a.start || '').trim() ? 'starting' : 'ending') + ' point.']);
+    });
+    const dec = d.decisions.filter(x => x.char === c.id); if (!dec.length && idxs.length >= N * .4) notes.push(['check', nm + ' is in a lot of the story but makes no recorded decisions. Do they only react?']);
+    if (dec.length && !dec.some(x => /major|irreversible|moral/i.test(x.type || ''))) notes.push(['note', nm + '\'s decisions are all minor. Is there a choice that costs them something?']);
+  }
+  if (d.chapters.length >= 2) {
+    const names = n38Names(c), tone = d.chapters.map(ch => { const ss = n38Sent(ch.text).filter(s => n38Count(s, names) > 0); return ss.length >= 2 ? n38Tone(ss.join(' ')) : null; }), men = d.chapters.map(ch => n38Count(ch.text, names));
+    if (men.some(Boolean)) h += '<div class="n38card"><b>Mood around ' + esc(nm) + ' in the text</b><p class="n38sub">From the words used near their name, chapter by chapter. Higher is warmer, lower is darker. A rough word-list reading, not a judgement of meaning.</p>' + n38Chart(men, tone.map(v => v == null ? null : 50 + Math.max(-4, Math.min(4, v)) * 12.5), null, { label: 'Mood by chapter', mid: 50, l: d.chapters[0].title.slice(0, 14), r: d.chapters[d.chapters.length - 1].title.slice(0, 14) }) + '<p class="n38sub">Bars show how often they are named.</p></div>';
+  } else if (d.fid !== '_none') h += '<p class="n38sub">Link this story to a document (and use chapter headings) to add a mood curve drawn from the text.</p>';
+  h += n38Notes(notes, 'Worth a look');
+  return h;
+}
+function n38Notes(list, title, empty) {
+  if (!list.length) return '<div class="n38card ok"><b>' + esc(title) + '</b><p>' + esc(empty || 'Nothing stands out.') + '</p></div>';
+  return '<div class="n38card"><b>' + esc(title) + ' (' + list.length + ')</b>' + list.map(n => '<div class="n38f ' + n[0] + '">' + (n[2] ? '<button data-n38="open" data-k="' + n[2] + '" data-id="' + n[3] + '">' : '<div>') + '<i>' + (n[0] === 'check' ? 'Check' : 'Note') + '</i> ' + esc(n[1]) + (n[2] ? '</button>' : '</div>') + '</div>').join('') + '</div>';
+}
+function n38SceneRows(d) {
+  return d.scenes.map((s, i) => {
+    const fill = ['summary', 'purpose', 'conflict', 'outcome', 'pov', 'loc'].filter(k => (s[k] || '').trim()).length + ((s.chars || []).length ? 1 : 0) + ((s.plots || []).length ? 1 : 0);
+    let t = ((s.conflict || '').trim() ? 1 : 0) + ((s.outcome || '').trim() ? .5 : 0);
+    d.arcs.forEach(a => (a.stages || []).forEach(st => { if (st.scene === s.id) t += 1.5; }));
+    d.decisions.forEach(x => { if ((x.scenes || []).includes(s.id)) t += (N38_DW[x.type] || 1.5) / 2; });
+    d.events.forEach(e => { if ((e.scenes || []).includes(s.id)) t += .5; });
+    return { s, i, fill, t };
+  });
+}
+function n38SceneView(d) {
+  if (!d.scenes.length) return '<p class="lead">No scenes in this story yet.</p>';
+  const rows = n38SceneRows(d), N = rows.length, notes = [], T = rows.map(r => r.t), mx = Math.max(...T, 1);
+  let h = '<div class="n38card"><b>Tension shape</b><p class="n38sub">Each bar adds up conflict, outcome, decisions, events and arc stages in that scene. It shows the shape of your story, not how good it is.</p>' + n38Chart(T, null, null, { label: 'Tension by scene', l: 'Scene 1', r: 'Scene ' + N }) + '</div>';
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0, th = Math.floor(N / 3);
+  if (N >= 9) { const a = mean(T.slice(0, th)), m = mean(T.slice(th, N - th)), z = mean(T.slice(N - th)); if (m < Math.min(a, z) * .7 && Math.min(a, z) > 0) notes.push(['check', 'The middle third is quieter than the start and the end (' + m.toFixed(1) + ' against ' + a.toFixed(1) + ' and ' + z.toFixed(1) + '). A sagging middle is common.']); if (z < a * .7 && a > 0) notes.push(['note', 'The final third has less going on than the first third. Check the ending is building.']); }
+  let lo = 0, bs = 0, st0 = 0, cur = 0; T.forEach((v, i) => { if (v <= .5) { if (!cur) st0 = i; cur++; if (cur > lo) { lo = cur; bs = st0; } } else cur = 0; }); if (lo >= 4) notes.push(['note', lo + ' scenes in a row (from scene ' + (bs + 1) + ') have almost no conflict or outcome recorded.']);
+  const noC = rows.filter(r => !(r.s.conflict || '').trim()).length; if (noC) notes.push(['note', noC + ' of ' + N + ' scenes have no conflict written down.']);
+  const noP = rows.filter(r => !(r.s.pov || '').trim()).length; if (noP) notes.push(['note', noP + ' scene(s) have no POV character.']);
+  if (d.plots.length) { const un = rows.filter(r => !(r.s.plots || []).length).length; if (un) notes.push(['note', un + ' scene(s) are not linked to any plotline.']); }
+  const pov = new Map(); rows.forEach(r => { if (r.s.pov) pov.set(r.s.pov, (pov.get(r.s.pov) || 0) + 1); });
+  if (pov.size) h += '<div class="n38card"><b>Whose eyes</b>' + [...pov].sort((a, b) => b[1] - a[1]).map(([id, n]) => { const c = srChar(id); return '<div class="n38hb"><span>' + esc(c ? n29Full(c) : 'Unknown') + '</span><i style="width:' + Math.round(n / N * 100) + '%"></i><em>' + n + '</em></div>'; }).join('') + '</div>';
+  h += n38Notes(notes, 'Worth a look');
+  h += '<div class="n38card"><b>Scene by scene</b>' + rows.map(r => '<button class="n38sr" data-n38="open" data-k="scenes" data-id="' + r.s.id + '"><span class="n38no">' + (r.i + 1) + '</span><span class="n38nm">' + esc(n30Name(r.s)) + '</span><span class="n38pg" title="Completeness"><i style="width:' + Math.round(r.fill / 8 * 100) + '%"></i></span><span class="n38tn">' + '▮'.repeat(Math.min(5, Math.round(r.t / mx * 5))) + '</span></button>').join('') + '<p class="n38sub">The small bar is how much of the scene card is filled in. The blocks show its tension.</p></div>';
+  return h;
+}
+function n38Checks(d) {
+  const L = [], N = d.scenes.length, nameOf = (k, r) => n31Name(k, r);
+  const sIdx = (ids) => (ids || []).map(id => d.idx.get(id)).filter(i => i != null);
+  d.arcs.forEach(a => { let prev = -1, pn = ''; (a.stages || []).forEach(st => { const i = st.scene ? d.idx.get(st.scene) : undefined; if (i == null) return; if (i < prev) L.push(['check', 'Arc “' + nameOf('arcs', a) + '”: the stage “' + (st.t || 'untitled') + '” is set in an earlier scene than “' + pn + '”.', 'arcs', a.id]); prev = Math.max(prev, i); pn = st.t || 'the stage before'; }); if (!a.char) L.push(['check', 'Arc “' + nameOf('arcs', a) + '” has no character.', 'arcs', a.id]); });
+  d.decisions.forEach(x => {
+    const mine = sIdx(x.scenes);
+    (x.leads || []).forEach(yid => { const y = n31Get('decisions', yid); if (!y) return; const my = sIdx(y.scenes); if (mine.length && my.length && Math.max(...my) < Math.min(...mine)) L.push(['check', '“' + nameOf('decisions', x) + '” leads to “' + nameOf('decisions', y) + '”, but that one is set in an earlier scene.', 'decisions', x.id]); });
+    if (x.char) (x.scenes || []).forEach(sid => { const s = n30Sc(sid); if (s && ((s.chars || []).length || s.pov) && !n38Pres(s, { id: x.char })) { const c = srChar(x.char); L.push(['note', (c ? n29Full(c) : 'The decider') + ' makes “' + nameOf('decisions', x) + '” in the scene “' + n30Name(s) + '”, but is not listed in that scene.', 'decisions', x.id]); } });
+  });
+  { const color = {}, path = []; const seen = new Set(); const dfs = id => { color[id] = 1; path.push(id); const x = n31Get('decisions', id); ((x && x.leads) || []).forEach(y => { if (!n31Get('decisions', y)) return; if (color[y] === 1) { const cyc = path.slice(path.indexOf(y)), key = cyc.slice().sort().join(); if (!seen.has(key)) { seen.add(key); L.push(['check', 'Decisions lead round in a circle: ' + cyc.map(i => '“' + nameOf('decisions', n31Get('decisions', i)) + '”').join(' → ') + '.', 'decisions', y]); } } else if (!color[y]) dfs(y); }); path.pop(); color[id] = 2; }; d.decisions.forEach(x => { if (!color[x.id]) dfs(x.id); }); }
+  d.events.forEach(e => { const sc = (e.scenes || []).map(id => n30Sc(id)).filter(Boolean); (e.chars || []).forEach(cid => { if (sc.length && sc.every(s => ((s.chars || []).length || s.pov) && !n38Pres(s, { id: cid }))) { const c = srChar(cid); L.push(['note', (c ? n29Full(c) : 'A participant') + ' takes part in “' + nameOf('events', e) + '”, but is not in any scene linked to it.', 'events', e.id]); } }); });
+  { const ev = d.events.map(e => ({ e, p: parseFloat(e.cpos), s: sIdx(e.scenes) })).filter(x => isFinite(x.p) && x.s.length); let bad = []; for (let i = 0; i < ev.length; i++) for (let j = 0; j < ev.length; j++) if (ev[i].p < ev[j].p && Math.min(...ev[i].s) > Math.max(...ev[j].s)) bad.push([ev[i], ev[j]]);
+    if (bad.length) L.push(['note', 'Story time and scene order disagree for ' + bad.length + ' pair(s) of events, e.g. “' + nameOf('events', bad[0][0].e) + '” happens before “' + nameOf('events', bad[0][1].e) + '” in story time but comes later in the book. Fine for flashbacks, worth confirming.', 'events', bad[0][0].e.id]); }
+  d.plots.forEach(p => {
+    if (/complete/i.test(p.status || '')) (p.conflicts || []).forEach(cid => { const c = n31Get('conflicts', cid); if (c && !(c.resolution || '').trim()) L.push(['check', 'Plotline “' + nameOf('plots', p) + '” is Completed, but its conflict “' + nameOf('conflicts', c) + '” has no resolution.', 'conflicts', c.id]); });
+    if (p.kind !== 'main' && !d.scenes.some(s => (s.plots || []).includes(p.id)) && !(p.events || []).length) L.push(['note', 'Plotline “' + nameOf('plots', p) + '” has no scenes or events linked to it.', 'plots', p.id]);
+  });
+  const main = d.plots.find(p => p.kind === 'main'); if (main && N >= 8) ['Climax', 'Resolution', 'Central Conflict'].forEach(t => { const s = (main.sections || []).find(x => (x.t || '').toLowerCase() === t.toLowerCase()); if (s && !(s.b || '').trim()) L.push(['note', 'The main plot’s “' + t + '” is still empty and you already have ' + N + ' scenes.', 'plots', main.id]); });
+  if (N >= 3) d.chars.forEach(c => { if (!d.scenes.some(s => n38Pres(s, c))) L.push(['note', (n29Full(c) || 'A character') + ' is in this story but in no scene.', 'characters', c.id]); });
+  // text vs Storm Room
+  if (d.doc && d.words >= 300) {
+    const text = d.chapters.map(c => c.text).join('\n'), known = new Set(), listed = [];
+    d.chars.forEach(c => n38Names(c).forEach(x => { known.add(x.toLowerCase()); listed.push({ w: x, c }); }));
+    d.scenes.forEach(s => n38W(s.loc || '').forEach(x => known.add(x))); d.events.forEach(e => n38W(e.loc || '').forEach(x => known.add(x)));
+    const common = new Set('The And But For With When Then They There That This What Where While Which Would Could Should Their Them These Those Have Had Has Not Was Were Are His Her She You Your Our Its One Two Three God Lord Mr Mrs Miss Sir Monday Tuesday Wednesday Thursday Friday Saturday Sunday January February March April May June July August September October November December Chapter Part Yes No Oh Well Now Just Maybe After Before Because Still Even Some Every Each Once If So As At In On Of To By From Into Over Under Perhaps Never Always Again'.split(' ').map(x => x.toLowerCase()));
+    const freq = new Map(), freqAll = new Map(); const re = /(?<![\p{L}'])\p{Lu}[\p{L}']{2,}/gu; let m; while ((m = re.exec(text))) { const pre = text.slice(Math.max(0, m.index - 3), m.index).replace(/[ \t"“‘(—-]+$/, ''); const w = m[0].replace(/['’]s$/, ''); const lw = w.toLowerCase(); if (common.has(lw) || known.has(lw)) continue; freqAll.set(w, (freqAll.get(w) || 0) + 1); if (!pre || /[.!?…:\n]$/.test(pre)) continue; freq.set(w, (freq.get(w) || 0) + 1); }
+    const reported = new Set();
+    [...freqAll].filter(([w]) => w.length >= 3).forEach(([w, n]) => { const near = listed.find(l => l.w.length >= 4 && w.length >= 4 && n38Lev(w.toLowerCase(), l.w.toLowerCase()) <= (l.w.length > 6 ? 2 : 1)); if (near && n <= Math.max(6, d.words / 400)) { reported.add(w); L.push(['check', '“' + w + '” (' + n + '×) in the text looks very like “' + near.w + '”. A misspelling?', 'characters', near.c.id]); } });
+    [...freq].filter(([w, n]) => n >= 4 && !reported.has(w)).sort((a, b) => b[1] - a[1]).slice(0, 5).forEach(([w, n]) => L.push(['note', '“' + w + '” appears ' + n + ' times in the text but is not one of your characters or places.']));
+    if (d.words >= 1500) d.chars.forEach(c => { const nm = n38Names(c); if (nm.length && !n38Count(text, nm)) L.push(['note', (n29Full(c) || 'A character') + ' is never named in the linked document.', 'characters', c.id]); });
+    if (d.chapters.length >= 4) d.chars.forEach(c => { const nm = n38Names(c); if (!nm.length) return; const cnt = d.chapters.map(ch => n38Count(ch.text, nm)), cut = Math.floor(d.chapters.length * .6), a = cnt.slice(0, cut).reduce((x, y) => x + y, 0), b = cnt.slice(cut).reduce((x, y) => x + y, 0); if (a >= 5 && b === 0) L.push(['note', n29Full(c) + ' is named ' + a + ' times in the first part of the text and never in the last ' + (d.chapters.length - cut) + ' chapters.', 'characters', c.id]); });
+  }
+  const order = { check: 0, note: 1 }; return L.sort((a, b) => order[a[0]] - order[b[0]]);
+}
+function n38TextView(d) {
+  if (!d.doc) return '<p class="lead">This story is not linked to a document yet. Open the story and use “Link to a document”, and this view will read the text for pacing.</p>';
+  if (d.words < 100) return '<p class="lead">The linked document has too little text to read yet.</p>';
+  const rows = d.chapters.map(ch => { const w = n38W(ch.text), ss = n38Sent(ch.text), dl = (ch.text.match(/[“"]([^”"]{1,400})[”"]/g) || []).reduce((a, q) => a + n38W(q).length, 0), syl = w.reduce((a, x) => a + n38Syl(x), 0), asl = ss.length ? w.length / ss.length : 0; return { t: ch.title, w: w.length, asl, dia: w.length ? dl / w.length * 100 : 0, fre: w.length && ss.length ? 206.835 - 1.015 * asl - 84.6 * (syl / w.length) : 0, tone: n38Tone(ch.text), q: (ch.text.match(/[?!]/g) || []).length / Math.max(1, ss.length) * 100 }; });
+  const med = rows.map(r => r.w).sort((a, b) => a - b)[Math.floor(rows.length / 2)], notes = [];
+  rows.forEach(r => { if (rows.length >= 3 && r.w > med * 2.2) notes.push(['note', '“' + r.t + '” is ' + r.w.toLocaleString() + ' words, over twice the typical chapter (' + med.toLocaleString() + ').']); if (rows.length >= 3 && r.w < med * .3 && r.w > 0) notes.push(['note', '“' + r.t + '” is very short (' + r.w.toLocaleString() + ' words) next to the typical chapter.']); if (r.asl > 28) notes.push(['note', '“' + r.t + '” averages ' + Math.round(r.asl) + ' words a sentence. Dense going.']); });
+  const all = d.chapters.map(c => c.text).join(' '), aw = n38W(all), cr = N38_CRUTCH.map(x => [x, aw.filter(y => y === x).length / aw.length * 1000]).filter(x => x[1] >= 3).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  if (cr.length) notes.push(['note', 'Words you lean on, per 1,000 words: ' + cr.map(x => x[0] + ' ' + x[1].toFixed(1)).join(', ') + '.']);
+  const rep = new Map(); n38Sent(all).forEach(s => { const k = s.toLowerCase(); if (k.length > 25) rep.set(k, (rep.get(k) || 0) + 1); }); const dup = [...rep].filter(x => x[1] > 1); if (dup.length) notes.push(['note', dup.length + ' long sentence(s) appear more than once, e.g. “' + dup[0][0].slice(0, 60) + '…”.']);
+  let h = '<div class="n38card"><b>Pacing by chapter</b><p class="n38sub">Bars: words per chapter. Line: share of dialogue.</p>' + n38Chart(rows.map(r => r.w), rows.map(r => Math.min(100, r.dia * 2)), null, { label: 'Chapter length and dialogue', l: rows[0].t.slice(0, 14), r: rows[rows.length - 1].t.slice(0, 14) }) + '</div>';
+  h += '<div class="n38card"><b>Chapter by chapter</b><div class="n38tb"><div class="n38th"><span>Chapter</span><span>Words</span><span>Sent.</span><span>Dial.</span><span>Ease</span></div>' + rows.map(r => '<div><span>' + esc(r.t.slice(0, 22)) + '</span><span>' + r.w.toLocaleString() + '</span><span>' + Math.round(r.asl) + '</span><span>' + Math.round(r.dia) + '%</span><span>' + Math.round(r.fre) + '</span></div>').join('') + '</div><p class="n38sub">Sent. is words per sentence. Dial. is the share of words inside quotation marks. Ease is the Flesch reading-ease score for English (60–70 is plain, lower is denser); it is not meaningful for Yoruba or other languages.</p></div>';
+  return h + n38Notes(notes, 'Worth a look');
+}
+function n38Page(fid) {
+  const f = fid === '_none' ? { name: 'No story yet' } : n29Folder(fid); if (!f) { state.srFolder = ''; return srHome(); }
+  const d = n38Data(fid), V = [['char', 'Characters'], ['scene', 'Scenes'], ['check', 'Consistency'], ['text', 'Text']];
+  let body;
+  if (N38.v === 'scene') body = n38SceneView(d);
+  else if (N38.v === 'check') { const L = n38Checks(d); body = n38Notes(L, 'Consistency checks', 'No contradictions found in what you have entered so far.') + '<p class="n38sub">Checks compare your plot, scenes, arcs and decisions with each other' + (d.doc && d.words >= 300 ? ', and with names in the linked document' : '') + '. They find patterns that may be errors. Flashbacks, unreliable narrators and deliberate choices can look like mistakes, so you decide.</p>'; }
+  else if (N38.v === 'text') body = n38TextView(d);
+  else body = n38CharView(d);
+  return '<div class="page srm n30page n31page"><div class="sr-top"><button class="sr-back" data-n29="fold-back" aria-label="Back to stories">' + V32_BACK + '</button><h1 class="n29ft">' + esc(f.name) + '</h1></div>' + n30Tabs(fid, 'analysis') + '<div class="n30nav">' + V.map(v => '<button data-n38="view" data-v="' + v[0] + '" class="' + (N38.v === v[0] ? 'on' : '') + '">' + v[1] + '</button>').join('') + '</div>' + body + '</div>';
+}
+{ const _t = n30Tabs; n30Tabs = function (fid, cur) { return _t(fid, cur).replace('<button class="n30tabs-link"', '<button data-n30="tab" data-v="analysis" class="' + (cur === 'analysis' ? 'on' : '') + '">Analysis</button><button class="n30tabs-link"'); }; }
+{ const _f = n29FolderPage; n29FolderPage = function (fid) { if (state.srArea === 'arch' && state.srTab === 'analysis') { const f = fid === '_none' ? true : n29Folder(fid); if (f) return n38Page(fid); } return _f(fid); }; }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-n38]'); if (!b) return; const a = b.dataset.n38;
+  if (a === 'view') { N38.v = b.dataset.v; srRefresh(); const m = $('#main'); if (m) m.scrollTop = 0; } else if (a === 'open') n35Open(b.dataset.k, b.dataset.id); });
+document.addEventListener('change', e => { if (e.target.dataset && e.target.dataset.n38 === 'char') { N38.c = e.target.value; srRefresh(); } });
+const n38css = document.createElement('style'); n38css.textContent = `.n38card{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0;background:var(--surface)}.n38card.ok{border-color:color-mix(in srgb,#2f7d4f 40%,var(--line))}.n38card>b{display:block;font-size:16px;margin-bottom:4px}.n38sub{font-size:13px;color:var(--fg-muted);margin:4px 0 8px;line-height:1.45}.n38svg{width:100%;height:auto;display:block}.n38grid{stroke:var(--line);stroke-width:1}.n38mid{stroke:var(--fg-muted);stroke-dasharray:3 3;stroke-width:1}.n38bar{fill:var(--accent);opacity:.28}.n38line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}.n38dot{fill:var(--accent)}.n38st{fill:#2D3A8C}.n38dc{fill:#B5651D;stroke:var(--surface);stroke-width:1.5}.n38ax{font-size:10px;fill:var(--fg-muted)}.n38pick{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--fg-muted)}.n38pick select{min-height:44px;font-size:16px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--fg)}.n38kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.n38kv div{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;background:var(--surface)}.n38kv b{display:block;font-size:20px}.n38kv span{font-size:12px;color:var(--fg-muted)}.n38f{margin:6px 0}.n38f button,.n38f>div{display:block;width:100%;text-align:left;border:0;background:transparent;color:inherit;font:inherit;font-size:14.5px;line-height:1.45;padding:6px 0;border-bottom:1px solid var(--line)}.n38f i{font-style:normal;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:6px;margin-right:6px;background:#EEDFCB;color:#5C2A12}.n38f.check i{background:#F6D9D2;color:#8A2B16}.n38sr{display:grid;grid-template-columns:28px 1fr 56px 52px;gap:8px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:14px;padding:8px 0;min-height:44px}.n38no{color:var(--fg-muted)}.n38nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.n38pg{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.n38pg i{display:block;height:100%;background:#2f7d4f}.n38tn{font-size:10px;color:var(--accent);letter-spacing:-1px}.n38hb{display:grid;grid-template-columns:110px 1fr 28px;gap:8px;align-items:center;font-size:14px;margin:6px 0}.n38hb i{height:8px;border-radius:4px;background:var(--accent);opacity:.6}.n38hb em{font-style:normal;color:var(--fg-muted);text-align:right}.n38tb>div{display:grid;grid-template-columns:1fr 54px 40px 44px 40px;gap:4px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}.n38tb .n38th{font-weight:700;color:var(--fg-muted);font-size:12px}.n38tb span:not(:first-child){text-align:right}`;
+document.head.appendChild(n38css);
+
+
+/* ===== v39: page setup (desktop), page numbers, section breaks, welcome back ===== */
+const N39_PRE = { std: [1, 1, 1, 1, 0], narrow: [.5, .5, .5, .5, 0], moderate: [1, 1, .75, .75, 0], wide: [1, 1, 2, 2, 0], book: [.75, .75, .75, .75, .5] };
+const N39_PRE_N = { std: 'Standard (1 in)', narrow: 'Narrow (0.5 in)', moderate: 'Moderate', wide: 'Wide', book: 'Book (with binding gutter)', custom: 'Custom' };
+const N39_DIM = { a4: [8.27, 11.69], letter: [8.5, 11], a5: [5.83, 8.27], legal: [8.5, 14], b6: [6, 9], trade: [5, 8] };
+const N39_FMT = [['nN', '1 / 12'], ['n', '1'], ['pg', 'Page 1'], ['pgN', 'Page 1 of 12'], ['r', 'i, ii, iii'], ['R', 'I, II, III'], ['a', 'a, b, c'], ['A', 'A, B, C']];
+const N39_POS = [['bc', 'Bottom centre'], ['br', 'Bottom right'], ['bl', 'Bottom left'], ['tc', 'Top centre'], ['tr', 'Top right'], ['tl', 'Top left']];
+const n39Pn = d => Object.assign({ on: true, pos: 'bc', fmt: 'nN', start: 1, first: true, oe: false }, (d && d.pn) || {});
+const n39Rom = n => { const m = [[1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']]; let s = ''; m.forEach(([v, t]) => { while (n >= v) { s += t; n -= v; } }); return s; };
+const n39Alpha = n => { let s = ''; while (n > 0) { n--; s = String.fromCharCode(97 + n % 26) + s; n = Math.floor(n / 26); } return s; };
+function n39Label(num, f, tot) {
+  if (num < 1 && /^[rRaA]$/.test(f)) return String(num);
+  switch (f) { case 'n': return '' + num; case 'pg': return 'Page ' + num; case 'pgN': return 'Page ' + num + ' of ' + tot; case 'r': return n39Rom(num); case 'R': return n39Rom(num).toUpperCase(); case 'a': return n39Alpha(num); case 'A': return n39Alpha(num).toUpperCase(); default: return num + ' / ' + tot; }
+}
+function n39Pos(p, num) { let pos = p.pos || 'bc'; if (p.oe && /[rl]$/.test(pos) && num % 2 === 0) pos = pos[0] + (pos[1] === 'r' ? 'l' : 'r'); return pos; }
+const n39Dim = () => { const g = edDoc && edDoc.pgset, d = n41Base(); return g && g.orient === 'l' ? [d[1], d[0]] : d; };
+function n39Apply() {
+  const sh = $('.sheet'); if (!sh || !edDoc) return; const g = edDoc.pgset;
+  if (!g) { ['--lg', '--pt', '--mrp', '--mbp', '--mlp'].forEach(k => sh.style.removeProperty(k)); sh.style.paddingRight = ''; delete sh.dataset.mb; delete sh.dataset.ratio; delete sh.dataset.guides; return; }
+  const dim = n39Dim(), W = sh.getBoundingClientRect().width || 600, k = W / dim[0];
+  sh.style.setProperty('--lg', ((+g.ml || 0) + (+g.gut || 0)) * k + 'px'); sh.style.paddingRight = (+g.mr || 0) * k + 'px'; sh.style.setProperty('--pt', (+g.mt || 0) * k + 'px');
+  sh.dataset.mb = String(Math.round((+g.mb || 0) * k)); sh.dataset.ratio = String(dim[1] / dim[0]);
+  sh.dataset.guides = g.guides ? '1' : '0'; sh.style.setProperty('--mrp', (+g.mr || 0) * k + 'px'); sh.style.setProperty('--mbp', Math.round((+g.mb || 0) * k) + 'px'); sh.style.setProperty('--mlp', getComputedStyle(sh).paddingLeft);
+}
+const n39Save = () => { try { touch(); } catch (e) {} try { n39Apply(); v30Sched(40); } catch (e) {} };
+function n39Setup() {
+  if (!edDoc) return;
+  if (innerWidth < 900) { toast('Page setup is a desktop feature. Open Ink Haven on a computer.'); return; }
+  const g = edDoc.pgset || { pre: 'std', mt: 1, mb: 1, ml: 1, mr: 1, gut: 0, u: 'in', orient: 'p' }, p = n39Pn(edDoc), cm = g.u === 'cm', cv = v => (cm ? v * 2.54 : v).toFixed(2).replace(/\.?0+$/, '') || '0';
+  const num = (k, l) => `<label>${l}<input type="number" step="0.05" min="0" max="${cm ? 15 : 6}" data-n39f="${k}" value="${cv(+g[k] || 0)}"></label>`;
+  const secs = [...($('#editor') || document).querySelectorAll('hr.sb')];
+  const opts = (arr, cur) => arr.map(a => `<option value="${a[0]}"${a[0] === cur ? ' selected' : ''}>${a[1]}</option>`).join('');
+  const secH = secs.length ? secs.map((h, i) => `<div class="n39sec"><b>Section ${i + 2}</b><select data-n39s="${i}" data-k="t" aria-label="Break type">${opts([['next', 'Next page'], ['cont', 'Continuous'], ['odd', 'Odd page'], ['even', 'Even page']], h.dataset.t || 'next')}</select><label><input type="checkbox" data-n39s="${i}" data-k="pn"${h.dataset.pn === 'r' ? ' checked' : ''}> Restart numbering at</label><input type="number" min="0" style="width:70px" data-n39s="${i}" data-k="st" value="${h.dataset.st || 1}"><select data-n39s="${i}" data-k="f" aria-label="Number style"><option value="">Same style</option>${opts(N39_FMT, h.dataset.f || '')}</select><label><input type="checkbox" data-n39s="${i}" data-k="h"${h.dataset.h === '1' ? ' checked' : ''}> No numbers here</label><button class="wb" data-n39="secdel" data-v="${i}">Remove break</button></div>`).join('') : '<p class="lead">No section breaks yet. Click in the text where a new section starts, then use Page menu &gt; Section break.</p>';
+  wSheet('Page setup', `<div class="n39p">
+  <h3>Start from a book layout</h3><div class="n41bk">${Object.keys(N41_BOOKS).map(k => `<button class="wb" data-n41="book" data-v="${k}">${N41_BOOKS[k].n}</button>`).join('')}</div><p class="lead n39hint">Sets the trim size, margins, mirrored pages and a 0.125 in bleed. Printers differ, so check your printer's guide.</p>
+  <h3>Margins</h3><div class="wrow"><label>Preset<select data-n39f="pre">${opts(Object.entries(N39_PRE_N), g.pre || 'std')}</select></label><label>Unit<select data-n39f="u"><option value="in"${cm ? '' : ' selected'}>Inches</option><option value="cm"${cm ? ' selected' : ''}>Centimetres</option></select></label></div>
+  <div class="n39grid">${num('mt', 'Top')}${num('mb', 'Bottom')}${num('ml', g.mirror ? 'Inside' : 'Left')}${num('mr', g.mirror ? 'Outside' : 'Right')}${num('gut', 'Binding gutter')}</div>
+  <h3>Paper</h3><div class="wrow"><label>Size<select data-n39f="size">${Object.keys(N29_SIZES).map(k => `<option value="${k}"${(state.set.pgsize || 'a4') === k ? ' selected' : ''}>${N29_SIZES[k].n}</option>`).join('')}</select></label><label>Orientation<select data-n39f="orient"><option value="p"${g.orient === 'l' ? '' : ' selected'}>Portrait</option><option value="l"${g.orient === 'l' ? ' selected' : ''}>Landscape</option></select></label></div>
+  ${(state.set.pgsize === 'custom') ? `<div class="wrow"><label>Width (${cm ? 'cm' : 'in'})<input type="number" step="0.05" min="2" max="20" style="width:90px" data-n39f="cw" value="${cv(+g.cw || 6)}"></label><label>Height (${cm ? 'cm' : 'in'})<input type="number" step="0.05" min="2" max="20" style="width:90px" data-n39f="ch" value="${cv(+g.ch || 9)}"></label></div>` : ''}
+  <h3>Print and binding</h3><label class="n39ck"><input type="checkbox" data-n39f="mirror"${g.mirror ? ' checked' : ''}> Mirror margins for facing pages (inside and outside)</label>
+  <div class="wrow"><label>Bleed<select data-n39f="bleed">${[['0', 'None'], ['0.125', '0.125 in (3 mm)'], ['0.1875', '0.1875 in (4.5 mm)'], ['0.25', '0.25 in (6 mm)']].map(a => `<option value="${a[0]}"${(+g.bleed || 0) === +a[0] ? ' selected' : ''}>${a[1]}</option>`).join('')}</select></label></div>
+  <label class="n39ck"><input type="checkbox" data-n39f="marks"${g.marks ? ' checked' : ''}> Crop marks in the PDF</label>
+  <label class="n39ck"><input type="checkbox" data-n39f="guides"${g.guides ? ' checked' : ''}> Show margin guides on the page</label>
+  <h3>Page numbers</h3><label class="n39ck"><input type="checkbox" data-n39f="pnon"${p.on ? ' checked' : ''}> Show page numbers</label>
+  <div class="wrow"><label>Position<select data-n39f="pnpos">${opts(N39_POS, p.pos)}</select></label><label>Style<select data-n39f="pnfmt">${opts(N39_FMT, p.fmt)}</select></label><label>Start at<input type="number" min="0" style="width:80px" data-n39f="pnstart" value="${p.start}"></label></div>
+  <label class="n39ck"><input type="checkbox" data-n39f="pnfirst"${p.first ? ' checked' : ''}> Show a number on the first page</label>
+  <label class="n39ck"><input type="checkbox" data-n39f="pnoe"${p.oe ? ' checked' : ''}> Different for odd and even pages (outside corners, for books)</label>
+  <h3>Sections</h3>${secH}
+  <p class="lead n39hint">The screen shows margins, page numbers and breaks, but not mirrored margins, bleed or crop marks. Word files carry sizes, margins, mirrored margins, sections and numbers. PDF also carries bleed and crop marks (choose Save as PDF, Margins: Default; numbers need a recent Chrome or Edge). Restarting numbers is Word-only. Pages on screen may break a line differently from Word.</p></div>`, 'n39wide');
+}
+function n39Chg(el) {
+  if (!edDoc) return; const f = el.dataset.n39f, v = el.type === 'checkbox' ? el.checked : el.value;
+  edDoc.pgset = edDoc.pgset || { pre: 'std', mt: 1, mb: 1, ml: 1, mr: 1, gut: 0, u: 'in', orient: 'p' }; const g = edDoc.pgset;
+  if (['mt', 'mb', 'ml', 'mr', 'gut'].includes(f)) { const x = Math.max(0, Math.min(g.u === 'cm' ? 15 : 6, parseFloat(v) || 0)); g[f] = g.u === 'cm' ? x / 2.54 : x; g.pre = 'custom'; }
+  else if (f === 'pre') { g.pre = v; if (N39_PRE[v]) { const a = N39_PRE[v]; g.mt = a[0]; g.mb = a[1]; g.ml = a[2]; g.mr = a[3]; g.gut = a[4]; } }
+  else if (f === 'u') g.u = v; else if (f === 'orient') g.orient = v;
+  else if (f === 'cw' || f === 'ch') { const x = Math.max(2, Math.min(20, parseFloat(v) || 6)); g[f] = g.u === 'cm' ? x / 2.54 : x; }
+  else if (f === 'bleed') g.bleed = Math.max(0, Math.min(.5, parseFloat(v) || 0));
+  else if (f === 'mirror' || f === 'marks' || f === 'guides') g[f] = !!v;
+  else if (f === 'size') { state.set.pgsize = v; try { saveSettings(); } catch (e) {} }
+  else { const p = edDoc.pn = Object.assign({}, n39Pn(edDoc)); if (f === 'pnon') p.on = v; else if (f === 'pnpos') p.pos = v; else if (f === 'pnfmt') p.fmt = v; else if (f === 'pnstart') p.start = Math.max(0, parseInt(v, 10) || 1); else if (f === 'pnfirst') p.first = v; else if (f === 'pnoe') p.oe = v; }
+  n39Save(); if (['pre', 'u', 'orient', 'size', 'mirror'].includes(f)) n39Setup();
+}
+function n39Sec(el) {
+  const ed = $('#editor'), hs = [...ed.querySelectorAll('hr.sb')], h = hs[+el.dataset.n39s]; if (!h) return; const k = el.dataset.k, v = el.type === 'checkbox' ? el.checked : el.value;
+  if (k === 't') h.dataset.t = v; else if (k === 'pn') { if (v) h.dataset.pn = 'r'; else h.removeAttribute('data-pn'); } else if (k === 'st') h.dataset.st = String(Math.max(0, parseInt(v, 10) || 1)); else if (k === 'f') { if (v) h.dataset.f = v; else h.removeAttribute('data-f'); } else if (k === 'h') { if (v) h.dataset.h = '1'; else h.removeAttribute('data-h'); }
+  try { fire(); } catch (e) {} v30Sched(40);
+}
+function n39InsertSb(t) { if (innerWidth < 900) { toast('Section breaks are a desktop feature.'); return; } insertAtCaret('<hr class="sb" data-t="' + t + '"><p><br></p>'); toast('Section break added'); }
+document.addEventListener('change', e => { const el = e.target; if (!el.dataset) return; if (el.dataset.n39f) n39Chg(el); else if (el.dataset.n39s != null) n39Sec(el); });
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-n39]'); if (!b) return; const a = b.dataset.n39;
+  if (a === 'setup') n39Setup();
+  else if (a === 'secdel') { const h = [...$('#editor').querySelectorAll('hr.sb')][+b.dataset.v]; if (h) { h.remove(); try { fire(); } catch (x) {} v30Sched(40); n39Setup(); } }
+  else if (a === 'pntoggle' && edDoc) { const p = edDoc.pn = Object.assign({}, n39Pn(edDoc)); p.on = !p.on; b.textContent = p.on ? 'Page numbers: On' : 'Page numbers: Off'; n39Save(); }
+});
+/* welcome back */
+const n39Last = () => { try { return +localStorage.getItem('inkhaven.lastseen') || 0; } catch (e) { return 0; } };
+const n39Mark = () => { try { localStorage.setItem('inkhaven.lastseen', String(Date.now())); } catch (e) {} };
+let n39Shown = 0;
+function n39Welcome() {
+  if (WS.wb === false || Date.now() - n39Shown < 600000) return; const last = n39Last(); if (!last || Date.now() - last < 30 * 60000) return;
+  n39Shown = Date.now(); const docs = state.items.filter(i => i.kind === 'doc' && !i.draft && !i.deletedAt).sort((a, b) => (b.updated || 0) - (a.updated || 0)), d0 = docs[0], t = WS.days[wDay()] || 0, away = Date.now() - last;
+  const since = away > 864e5 ? Math.floor(away / 864e5) + ' day' + (Math.floor(away / 864e5) > 1 ? 's' : '') : Math.floor(away / 36e5) ? Math.floor(away / 36e5) + ' hour' + (Math.floor(away / 36e5) > 1 ? 's' : '') : '';
+  const c = document.createElement('div'); c.className = 'n39wb'; c.setAttribute('role', 'status');
+  c.innerHTML = '<b>Welcome back' + (since ? '. It has been ' + since : '') + '.</b><span>' + (d0 ? 'You were working on <i>' + esc(titleOf(d0)) + '</i>. ' : '') + (t ? t.toLocaleString() + ' words written today.' : 'Today\'s goal is ' + WS.goal.toLocaleString() + ' words.') + '</span>' + (d0 ? '<button data-n39="wbgo" data-id="' + d0.id + '">Continue</button>' : '') + '<button class="n39x" data-n39="wbx" aria-label="Dismiss">&times;</button>';
+  document.body.appendChild(c); setTimeout(() => { if (c.isConnected) c.classList.add('out'); setTimeout(() => c.remove(), 500); }, 12000);
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-n39="wbgo"],[data-n39="wbx"]'); if (!b) return; const c = b.closest('.n39wb'); if (b.dataset.n39 === 'wbgo') location.hash = '#doc-' + b.dataset.id; if (c) c.remove(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) n39Mark(); else setTimeout(n39Welcome, 600); });
+window.addEventListener('pagehide', n39Mark); setInterval(() => { if (!document.hidden) n39Mark(); }, 60000);
+setTimeout(() => { n39Welcome(); n39Mark(); }, 3500);
+const n39css = document.createElement('style'); n39css.textContent = `hr.sb{position:relative;height:0;border:0;border-top:2px dotted #2D3A8C;margin:26px 0;overflow:visible}hr.sb::after{content:"Section break (next page)";position:absolute;left:50%;top:-9px;transform:translateX(-50%);padding:0 10px;font:600 11px/16px var(--font-ui,system-ui,sans-serif);letter-spacing:.08em;text-transform:uppercase;color:#2D3A8C;background:var(--page)}hr.sb[data-t="cont"]::after{content:"Section break (continuous)"}hr.sb[data-t="odd"]::after{content:"Section break (odd page)"}hr.sb[data-t="even"]::after{content:"Section break (even page)"}.sheet.paged hr.sb{margin:0!important}#pgs .pn.bl{text-align:left;padding-left:18px}#pgs .pn.br{text-align:right;padding-right:18px}#pgs .pn.tc,#pgs .pn.tl,#pgs .pn.tr{top:8px;bottom:auto}#pgs .pn.tl{text-align:left;padding-left:18px}#pgs .pn.tr{text-align:right;padding-right:18px}#pgs .n39bl{position:absolute;left:0;right:0;top:46%;text-align:center;font:italic 13px var(--font-ui,system-ui,sans-serif);opacity:.35}.n39wide{max-width:760px!important}.n39p h3{margin:16px 0 6px;font-size:16px}.n39grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.n39grid input{width:100%;box-sizing:border-box}.n39p label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--fg-muted)}.n39p input,.n39p select{min-height:36px;border:1px solid var(--line);border-radius:8px;padding:0 8px;background:var(--surface);color:var(--fg);font-size:14px}.n39p .wrow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.n39p label.n39ck{flex-direction:row;align-items:center;gap:8px;margin:6px 0;color:var(--fg);font-size:14px}.n39p label.n39ck input{min-height:0;width:18px;height:18px}.n39sec{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0}.n39sec label{flex-direction:row;align-items:center;gap:6px;color:var(--fg)}.n39sec label input{min-height:0;width:16px;height:16px}.n39hint{font-size:12.5px}.n39wb{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:90;width:min(92vw,520px);box-sizing:border-box;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:12px 40px 12px 16px;box-shadow:0 8px 28px rgba(0,0,0,.2);transition:opacity .5s,transform .5s}.n39wb.out{opacity:0;transform:translateX(-50%) translateY(-10px)}.n39wb b{font-size:16px;flex-basis:100%}.n39wb span{font-size:14px;color:var(--fg-muted);flex:1 1 220px}.n39wb button{min-height:40px;padding:0 16px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-size:14px}.n39wb .n39x{position:absolute;right:6px;top:6px;min-height:32px;width:32px;padding:0;background:transparent;color:var(--fg-muted);font-size:20px}`;
+document.head.appendChild(n39css);
+
+
+/* ===== v40: paragraph and chapter breaks (desktop), soft line break, non-breaking space ===== */
+const n40Opts = d => Object.assign({ wid: true, kh: true, chap: '', chapStart: 'new' }, (d && d.brk) || {});
+function n40Ext(node, T, d) {
+  const o = n40Opts(d), bk = (node.getAttribute && node.getAttribute('data-bk') || '').split(' '), ex = {};
+  if (bk.includes('kn') || (o.kh && /^H[1-3]$/.test(T))) ex.keepNext = true;
+  if (bk.includes('kt')) ex.keepLines = true;
+  if (bk.includes('pb')) ex.pageBreakBefore = true;
+  ex.widowControl = o.wid !== false;
+  return ex;
+}
+let n40Sel = [];
+function n40Blocks() {
+  const ed = $('#editor'), s = getSelection(); if (!ed || !s.rangeCount) return []; const r = s.getRangeAt(0); if (!ed.contains(r.commonAncestorContainer)) return [];
+  const all = [...ed.querySelectorAll('p,h1,h2,h3,blockquote,li')].filter(b => r.intersectsNode(b));
+  return all.filter(b => !all.some(o => o !== b && b.contains(o)));
+}
+function n40Sheet() {
+  if (!edDoc) return; if (innerWidth < 900) { toast('Paragraph and chapter breaks are a desktop feature.'); return; }
+  n40Sel = n40Blocks() || []; const has = t => n40Sel.length && n40Sel.every(b => (b.getAttribute('data-bk') || '').split(' ').includes(t)), o = n40Opts(edDoc), dis = n40Sel.length ? '' : ' disabled';
+  wSheet('Paragraph and chapter breaks', `<div class="n39p"><h3>Selected paragraph${n40Sel.length > 1 ? 's (' + n40Sel.length + ')' : ''}</h3>${n40Sel.length ? '' : '<p class="lead">Click in a paragraph or heading first to use these.</p>'}
+  <label class="n39ck"><input type="checkbox" data-n40b="pb"${has('pb') ? ' checked' : ''}${dis}> Start on a new page (page break before)</label>
+  <label class="n39ck"><input type="checkbox" data-n40b="kn"${has('kn') ? ' checked' : ''}${dis}> Keep with next paragraph</label>
+  <label class="n39ck"><input type="checkbox" data-n40b="kt"${has('kt') ? ' checked' : ''}${dis}> Keep lines together (do not split across pages)</label>
+  <h3>Whole document</h3>
+  <label class="n39ck"><input type="checkbox" data-n40d="kh"${o.kh ? ' checked' : ''}> Keep headings with the paragraph after them</label>
+  <label class="n39ck"><input type="checkbox" data-n40d="wid"${o.wid ? ' checked' : ''}> Widow and orphan control (no single stranded line)</label>
+  <div class="wrow"><label>Chapters are<select data-n40d="chap"><option value=""${o.chap ? '' : ' selected'}>Not set</option><option value="H1"${o.chap === 'H1' ? ' selected' : ''}>Heading 1</option><option value="H2"${o.chap === 'H2' ? ' selected' : ''}>Heading 2</option></select></label><label>Each chapter starts on<select data-n40d="chapStart"><option value="new"${o.chapStart === 'odd' ? '' : ' selected'}>A new page</option><option value="odd"${o.chapStart === 'odd' ? ' selected' : ''}>A right-hand (odd) page</option></select></label></div>
+  <p class="lead n39hint">On screen, whole paragraphs already move together between pages, so keep-lines and widow control matter most in Word and PDF exports, which carry all of these settings. A marked paragraph shows a thin line at its left edge.</p></div>`, 'n39wide');
+}
+document.addEventListener('change', e => {
+  const el = e.target; if (!el.dataset || !edDoc) return;
+  if (el.dataset.n40b) { const t = el.dataset.n40b; n40Sel.forEach(b => { const s = new Set((b.getAttribute('data-bk') || '').split(' ').filter(Boolean)); if (el.checked) s.add(t); else s.delete(t); if (s.size) b.setAttribute('data-bk', [...s].join(' ')); else b.removeAttribute('data-bk'); }); try { fire(); } catch (x) {} v30Sched(40); }
+  else if (el.dataset.n40d) { const o = edDoc.brk = Object.assign({}, n40Opts(edDoc)), k = el.dataset.n40d; o[k] = el.type === 'checkbox' ? el.checked : el.value; try { touch(); } catch (x) {} v30Sched(40); }
+});
+document.addEventListener('keydown', e => { if (e.ctrlKey && e.shiftKey && e.code === 'Space' && e.target && e.target.id === 'editor') { e.preventDefault(); n40Nbsp(); } });
+function n40Soft() { const ed = $('#editor'); if (!ed) return; ed.focus(); if (!document.execCommand('insertLineBreak')) insertAtCaret('<br>'); try { fire(); } catch (e) {} }
+function n40Nbsp() { const ed = $('#editor'); if (!ed) return; ed.focus(); if (!document.execCommand('insertText', false, ' ')) insertAtCaret('&nbsp;'); try { fire(); } catch (e) {} }
+const n40css = document.createElement('style'); n40css.textContent = `#editor [data-bk]{box-shadow:-12px 0 0 -10px #2D3A8C}`; document.head.appendChild(n40css);
+
+
+/* ===== v41: book printing tools (desktop): trim sizes, mirrored margins, bleed, crop marks, margin guides ===== */
+Object.assign(N39_DIM, { p525: [5.25, 8], p55: [5.5, 8.5], royal: [6.14, 9.21], p7x10: [7, 10], p8x10: [8, 10], mm: [4.25, 6.87], bfmt: [5.04, 7.8], b5: [6.93, 9.84], a6: [4.13, 5.83], custom: [6, 9] });
+(() => { const nm = { p525: 'Paperback 5.25 x 8 in', p55: 'Digest 5.5 x 8.5 in', royal: 'Royal 6.14 x 9.21 in', p7x10: 'Textbook 7 x 10 in', p8x10: 'Large 8 x 10 in', mm: 'Mass market 4.25 x 6.87 in', bfmt: 'B-format 5.04 x 7.8 in', b5: 'B5 (176 x 250 mm)', a6: 'A6 (pocket)', custom: 'Custom size…' }; Object.keys(nm).forEach(k => { const d = N39_DIM[k]; N29_SIZES[k] = { n: nm[k], css: d[0] + 'in ' + d[1] + 'in', m: '0.75in' }; }); })();
+const N41_BOOKS = { trade: { n: 'Paperback 5 x 8', size: 'trade', mt: .75, mb: .75, ml: .75, mr: .5 }, p55: { n: 'Digest 5.5 x 8.5', size: 'p55', mt: .75, mb: .75, ml: .8, mr: .55 }, b6: { n: 'Trade 6 x 9', size: 'b6', mt: .75, mb: .75, ml: .875, mr: .625 } };
+function n41Base() { const k = state.set.pgsize || 'a4', g = edDoc && edDoc.pgset; if (k === 'custom') return [Math.max(2, Math.min(20, +(g && g.cw) || 6)), Math.max(2, Math.min(20, +(g && g.ch) || 9))]; return (N39_DIM[k] || N39_DIM.a4).slice(); }
+function n41Bleed(g) { const b = Math.max(0, Math.min(.5, +(g && g.bleed) || 0)), S = b + (g && g.marks ? .25 : 0); return { b, S }; }
+function n41Corner(w, h, cx, cy, sx, sy, b) { const L = .2, f = n => +n.toFixed(4); return `<svg xmlns='http://www.w3.org/2000/svg' width='${f(w)}in' height='${f(h)}in' viewBox='0 0 ${f(w)} ${f(h)}'><g stroke='black' stroke-width='0.007' fill='none'><path d='M${f(cx + sx * b)} ${f(cy)}H${f(cx + sx * (b + L))}M${f(cx)} ${f(cy + sy * b)}V${f(cy + sy * (b + L))}'/></g></svg>`; }
+function n39PdfCss(sz) {
+  const g = edDoc.pgset, p = n39Pn(edDoc), land = g && g.orient === 'l', num = v => +(+v || 0).toFixed(4);
+  let css = '';
+  const box = pos => ({ bc: 'bottom-center', br: 'bottom-right', bl: 'bottom-left', tc: 'top-center', tr: 'top-right', tl: 'top-left' }[pos] || 'bottom-center');
+  const sty = { n: 'counter(page)', nN: 'counter(page) " / " counter(pages)', pg: '"Page " counter(page)', pgN: '"Page " counter(page) " of " counter(pages)', r: 'counter(page, lower-roman)', R: 'counter(page, upper-roman)', a: 'counter(page, lower-alpha)', A: 'counter(page, upper-alpha)' }[p.fmt] || 'counter(page)';
+  const flip = pos => pos[0] + (pos[1] === 'r' ? 'l' : pos[1] === 'l' ? 'r' : 'c');
+  const numBox = (pos, mm) => { const top = pos[0] === 't', pad = Math.max(.05, num(mm * .5 - .07)); return '@' + box(pos) + '{content:' + sty + ';font:10pt sans-serif;color:#555;vertical-align:' + (top ? 'bottom' : 'top') + ';padding-' + (top ? 'bottom' : 'top') + ':' + pad + 'in}'; };
+  if (!g) {
+    const dim = n41Base(), k = state.set.pgsize;
+    css += '@page{size:' + (N29_SIZES[k] || N29_SIZES.a4).css + ';margin:' + (N29_SIZES[k] || N29_SIZES.a4).m + '}';
+    if (p.on) { css += '@page{' + numBox(p.pos, .8) + '}'; if (!p.first) css += '@page :first{@' + box(p.pos) + '{content:none}}'; }
+    return css;
+  }
+  const d0 = n41Base(), W0 = land ? d0[1] : d0[0], H0 = land ? d0[0] : d0[1], { b, S } = n41Bleed(g), W = W0 + 2 * S, H = H0 + 2 * S;
+  const mt = +g.mt || 0, mb = +g.mb || 0, ml = +g.ml || 0, mr = +g.mr || 0, gut = +g.gut || 0, mir = !!g.mirror;
+  const side = (inner, outer) => ({ l: S + inner, r: S + outer });
+  css += '@page{size:' + num(W) + 'in ' + num(H) + 'in;margin:' + num(S + mt) + 'in ' + num(S + mr) + 'in ' + num(S + mb) + 'in ' + num(S + ml + gut) + 'in}';
+  const sides = mir ? { right: { l: S + ml + gut, r: S + mr }, left: { l: S + mr, r: S + ml + gut } } : { all: { l: S + ml + gut, r: S + mr } };
+  Object.entries(sides).forEach(([nm, m]) => {
+    let inner = '';
+    if (mir) css += '@page :' + nm + '{margin-left:' + num(m.l) + 'in;margin-right:' + num(m.r) + 'in}';
+    if (g.marks) {
+      const T = S + mt, B = S + mb, mk = (id, w, h, cx, cy, sx, sy, va, ta) => '@' + id + '{content:url("data:image/svg+xml,' + encodeURIComponent(n41Corner(w, h, cx, cy, sx, sy, b)) + '");vertical-align:' + va + ';text-align:' + ta + ';padding:0}';
+      inner += mk('top-left-corner', m.l, T, S, S, -1, -1, 'top', 'left') + mk('top-right-corner', m.r, T, m.r - S, S, 1, -1, 'top', 'right') + mk('bottom-left-corner', m.l, B, S, B - S, -1, 1, 'bottom', 'left') + mk('bottom-right-corner', m.r, B, m.r - S, B - S, 1, 1, 'bottom', 'right');
+    }
+    if (p.on) { const pos = (p.oe && nm === 'left') ? flip(p.pos) : p.pos; inner += numBox(pos, pos[0] === 't' ? mt : mb); }
+    if (inner) css += '@page' + (mir ? ' :' + nm : '') + '{' + inner + '}';
+  });
+  if (p.on && !p.first) css += '@page :first{@' + box(p.pos) + '{content:none}}';
+  return css;
+}
+function n41PdfHtml() {
+  let html = buildHtmlPage(edDoc);
+  html = html.replace(/<hr class="sb"([^>]*)>/g, (m, at) => { const t = (/data-t="(\w+)"/.exec(at) || [])[1] || 'next'; return t === 'cont' ? '' : '<div style="break-after:' + (t === 'odd' ? 'right' : t === 'even' ? 'left' : 'page') + '"></div>'; });
+  const o4 = n40Opts(edDoc);
+  return html.replace('</head>', '<style>' + n39PdfCss() + '[data-bk~=kn]{break-after:avoid}[data-bk~=kt]{break-inside:avoid}[data-bk~=pb]{break-before:page}' + (o4.chap ? o4.chap.toLowerCase() + '{break-before:' + (o4.chapStart === 'odd' ? 'right' : 'page') + '}' : '') + (o4.wid === false ? 'p{orphans:1!important;widows:1!important}' : '') + 'html,body{background:#fff}body{max-width:none!important;margin:0!important;padding:0!important;font-size:12pt!important;line-height:1.6!important}h1,h2,h3{break-after:avoid}p{orphans:2;widows:2}img{max-width:100%;break-inside:avoid}</style></head>');
+}
+function n29Pdf() {
+  if (!edDoc) return; flushSave();
+  const html = n41PdfHtml();
+  const f = document.createElement('iframe'); f.id = 'n29pdf'; f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';
+  f.onload = () => { setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { toast('Could not open the print window'); } setTimeout(() => f.remove(), 120000); }, 500); };
+  f.srcdoc = html; document.body.appendChild(f);
+  const g = edDoc.pgset; toast(g && (g.bleed || g.marks) ? 'In the print window choose Save as PDF, Margins: Default' : 'In the window that opens, choose Save as PDF');
+}
+const n41Zip = async blob => {
+  await needLib('jszip'); const Z = await JSZip.loadAsync(blob), f = Z.file('word/settings.xml'); if (!f) return blob; let x = await f.async('string');
+  if (!/<w:mirrorMargins/.test(x)) { const nx = ['<w:alignBordersAndEdges', '<w:defaultTabStop', '<w:evenAndOddHeaders', '<w:characterSpacingControl', '<w:footnotePr', '<w:endnotePr', '<w:compat', '<w:rsids', '<m:mathPr', '<w:themeFontLang', '<w:decimalSymbol', '<w:listSeparator', '</w:settings>'].map(t => x.indexOf(t)).filter(i => i >= 0); const at = Math.min(...nx); x = x.slice(0, at) + '<w:mirrorMargins/>' + x.slice(at); Z.file('word/settings.xml', x); }
+  return Z.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-n41]'); if (!b || !edDoc) return;
+  if (b.dataset.n41 === 'book') {
+    const k = N41_BOOKS[b.dataset.v]; if (!k) return;
+    edDoc.pgset = Object.assign(edDoc.pgset || { u: 'in', orient: 'p' }, { pre: 'custom', mt: k.mt, mb: k.mb, ml: k.ml, mr: k.mr, gut: 0, mirror: true, bleed: .125, orient: 'p' }); state.set.pgsize = k.size; try { saveSettings(); } catch (x) {}
+    n39Save(); n39Setup(); toast(k.n + ' layout applied. Check your printer’s margin guide.');
+  }
+});
+window.n41Test = { html: () => n41PdfHtml(), doc: () => edDoc, set: () => state.set };
+const n41css = document.createElement('style'); n41css.textContent = `.n41g{position:absolute;left:var(--mlp);right:var(--mrp);top:var(--pt);bottom:var(--mbp);border:1px dashed rgba(45,58,140,.5);pointer-events:none;z-index:1}.n41bk{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}.n41bk .wb{min-height:36px}`; document.head.appendChild(n41css);
+
 document.addEventListener('selectionchange', updateToolbar);
 
 /* ---------- Paper settings ---------- */
@@ -5932,6 +6362,7 @@ const lum = h => { const n = parseInt(h.slice(1), 16); return (0.299 * (n >> 16 
 const paperOf = d => normPaper(d.paper || state.set.paper);
 function applyPaper(p) {
   const sh = $('.sheet'); if (!sh) return;
+  sh.dataset.flat = p.flat ? '1' : '0'; sh.dataset.sit = p.sit === false ? '0' : '1'; const edr = sh.closest('.editor'); if (edr) edr.dataset.flat = p.flat ? '1' : '0';
   sh.dataset.style = p.style; sh.dataset.lines = p.lines ? '1' : '0'; sh.dataset.margin = p.margin ? '1' : '0';
   if (p.style !== 'blank') sh.dataset.patt = '1'; else delete sh.dataset.patt;
   const st = sh.style;
@@ -5950,11 +6381,14 @@ function paperHtml() {
   const rng = (k, min, max, step, val, label, unit) => `<label class="ps-row"><span>${label}</span><input type="range" data-psr="${k}" data-unit="${unit}" min="${min}" max="${max}" step="${step}" value="${val}"><output>${val}${unit}</output></label>`;
   return `<div class="ps-panel${psCollapsed ? ' collapsed' : ''}" role="dialog" aria-label="Paper settings">
     <div class="ps-grab"><div class="grab"></div><div class="qs-head"><h2>Paper</h2><button class="btn primary" data-ps="done" style="min-height:40px">Done</button></div></div>
+    <div class="ps-sec"><h3>Page numbers</h3><div class="chips"><button class="chip on" data-n39="pntoggle">${n39Pn(edDoc).on ? 'Page numbers: On' : 'Page numbers: Off'}</button></div>${innerWidth >= 900 ? '<div class="chips"><button class="chip" data-n39="setup">Page setup: margins, sections and more</button></div>' : ''}</div>
+    <div class="ps-sec"><h3>Page look</h3><div class="chips">${chip('flat', '0', !p.flat, 'Book page (curved, soft)')}${chip('flat', '1', !!p.flat, 'Flat (like Google Docs)')}</div><p class="lead" style="font-size:13px">Flat gives a plain white square page with no curves or shadow. You can still add lines afterwards.</p></div>
     <div class="ps-sec"><h3>Style</h3><div class="chips">${PAPER_STYLES.map(x => chip('style', x[0], p.style === x[0], x[1])).join('')}</div></div>
     <div class="ps-sec"><h3>Paper colour</h3><div class="chips">${chip('bg', 'theme', p.bg === 'theme', 'Match theme')}${chip('bg', 'white', p.bg === 'white', 'White')}${chip('bg', 'off', p.bg === 'off', 'Soft off-white')}${chip('bg', 'custom', p.bg === 'custom', 'Custom')}
       ${p.bg === 'custom' ? `<input type="color" data-psc="bgc" value="${p.bgc}" aria-label="Custom paper colour">` : ''}</div></div>
     <div class="ps-sec"><h3>Lines</h3>
       <div class="chips">${chip('lines', '', p.lines, p.lines ? 'Lines shown' : 'Lines hidden')}${chip('th', '1', p.th === 1, 'Fine')}${chip('th', '1.5', p.th === 1.5, 'Medium')}${chip('th', '2', p.th === 2, 'Bold')}</div>
+      <div class="chips">${chip('sit', '', p.sit !== false, p.sit !== false ? 'Letters sit on the line' : 'Letters float above the line')}</div>
       ${rng('sp', 20, 72, 1, p.sp, 'Spacing', 'px')}
       <div class="ps-row"><span>Line colour</span><input type="color" data-psc="lc" value="${p.lc || '#d9d4ce'}" aria-label="Line colour">${chip('auto', 'lc', !p.lc, 'Auto')}</div></div>
     <div class="ps-sec"><h3>Margin</h3>
@@ -5987,6 +6421,8 @@ document.addEventListener('click', e => {
   else if (a === 'margin') psCur.margin = !psCur.margin;
   else if (a === 'th') psCur.th = Number(v);
   else if (a === 'bg') psCur.bg = v;
+  else if (a === 'sit') psCur.sit = psCur.sit === false;
+  else if (a === 'flat') { psCur.flat = v === '1'; if (psCur.flat) { Object.assign(psCur, PAPER_PRESETS.blank, { style: 'blank' }); if (psCur.bg === 'theme') psCur.bg = 'white'; } }
   else if (a === 'auto') psCur[v] = '';
   else if (a === 'save') { state.set.paper = Object.assign({}, psCur); saveSettings(); toast('Saved as your default paper'); return; }
   else if (a === 'reset') { delete edDoc.paper; psCur = normPaper(state.set.paper); applyPaper(psCur); touch(); $('#ps').innerHTML = paperHtml(); return; }
