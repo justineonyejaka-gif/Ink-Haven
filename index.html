@@ -6351,6 +6351,7 @@ document.addEventListener('click', e => {
     n39Save(); n39Setup(); toast(k.n + ' layout applied. Check your printer’s margin guide.');
   }
 });
+/* v41 test hook, harmless: lets the test browser read the PDF html */
 window.n41Test = { html: () => n41PdfHtml(), doc: () => edDoc, set: () => state.set };
 const n41css = document.createElement('style'); n41css.textContent = `.n41g{position:absolute;left:var(--mlp);right:var(--mrp);top:var(--pt);bottom:var(--mbp);border:1px dashed rgba(45,58,140,.5);pointer-events:none;z-index:1}.n41bk{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}.n41bk .wb{min-height:36px}`; document.head.appendChild(n41css);
 
@@ -6382,7 +6383,7 @@ function paperHtml() {
   return `<div class="ps-panel${psCollapsed ? ' collapsed' : ''}" role="dialog" aria-label="Paper settings">
     <div class="ps-grab"><div class="grab"></div><div class="qs-head"><h2>Paper</h2><button class="btn primary" data-ps="done" style="min-height:40px">Done</button></div></div>
     <div class="ps-sec"><h3>Page numbers</h3><div class="chips"><button class="chip on" data-n39="pntoggle">${n39Pn(edDoc).on ? 'Page numbers: On' : 'Page numbers: Off'}</button></div>${innerWidth >= 900 ? '<div class="chips"><button class="chip" data-n39="setup">Page setup: margins, sections and more</button></div>' : ''}</div>
-    <div class="ps-sec"><h3>Page look</h3><div class="chips">${chip('flat', '0', !p.flat, 'Book page (curved, soft)')}${chip('flat', '1', !!p.flat, 'Flat (like Google Docs)')}</div><p class="lead" style="font-size:13px">Flat gives a plain white square page with no curves or shadow. You can still add lines afterwards.</p></div>
+    <div class="ps-sec"><h3>Page look</h3><div class="chips">${chip('flat', '0', !p.flat, 'Book page (curved, soft)')}${chip('flat', '1', !!p.flat, 'Flat')}</div><p class="lead" style="font-size:13px">Flat gives a plain white square page with no curves or shadow. You can still add lines afterwards.</p></div>
     <div class="ps-sec"><h3>Style</h3><div class="chips">${PAPER_STYLES.map(x => chip('style', x[0], p.style === x[0], x[1])).join('')}</div></div>
     <div class="ps-sec"><h3>Paper colour</h3><div class="chips">${chip('bg', 'theme', p.bg === 'theme', 'Match theme')}${chip('bg', 'white', p.bg === 'white', 'White')}${chip('bg', 'off', p.bg === 'off', 'Soft off-white')}${chip('bg', 'custom', p.bg === 'custom', 'Custom')}
       ${p.bg === 'custom' ? `<input type="color" data-psc="bgc" value="${p.bgc}" aria-label="Custom paper colour">` : ''}</div></div>
